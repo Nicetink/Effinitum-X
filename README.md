@@ -14,7 +14,9 @@ Effinitum X is a powerful Windows system optimization and cleanup application.
 
 ## Screenshots
 
-*Screenshots will be added later*
+![System Information](Screnshots/image_2025-05-15_10-20-51.png)
+
+![System Cleanup](Screnshots/image_2025-05-15_10-21-55.png)
 
 ## System Requirements
 
