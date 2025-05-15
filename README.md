@@ -25,14 +25,14 @@ Effinitum X is a powerful Windows system optimization and cleanup application.
 
 ## Installation
 
-1. Download the latest release from the [releases page](https://github.com/your-username/EffinitumX/releases)
-2. Extract the archive
+1. Download the latest release from the [releases page](https://github.com/Nicetink/EffinitumX/releases)
+2. Install to disk
 3. Run `Effinitum X.exe`
 
 ## Building from Source
 
 ```
-git clone https://github.com/your-username/EffinitumX.git
+git clone https://github.com/Nicetink/Effinitum-X.git
 cd EffinitumX
 dotnet build --configuration Release
 ```
