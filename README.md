@@ -2,34 +2,34 @@
 
 ![Effinitum X Logo](Resources/logo.png)
 
-Effinitum X - мощное приложение для оптимизации и очистки системы Windows.
+Effinitum X is a powerful Windows system optimization and cleanup application.
 
-## Функции
+## Features
 
-- **Информация о системе**: Детальная информация о процессоре, памяти, дисках и других компонентах системы
-- **Очистка системы**: Удаление временных файлов, очистка корзины, кэша браузера и других ненужных файлов
-- **Анализатор диска**: Поиск и визуализация больших файлов для освобождения места на диске
-- **Менеджер процессов**: Просмотр и управление запущенными процессами с возможностью их завершения
-- **Управление автозагрузкой**: Просмотр и оптимизация программ, запускающихся при старте Windows
+- **System Information**: Detailed information about CPU, memory, disks, and other system components
+- **System Cleanup**: Remove temporary files, clean recycle bin, browser cache, and other unnecessary files
+- **Disk Analyzer**: Find and visualize large files to free up disk space
+- **Process Manager**: View and manage running processes with the ability to terminate them
+- **Startup Manager**: View and optimize programs that start with Windows
 
-## Скриншоты
+## Screenshots
 
-*Скриншоты будут добавлены позже*
+*Screenshots will be added later*
 
-## Системные требования
+## System Requirements
 
-- Windows 10 или Windows 11
-- .NET 9.0 или выше
-- 50 МБ свободного места на диске
-- 2 ГБ оперативной памяти
+- Windows 10 or Windows 11
+- .NET 9.0 or higher
+- 50 MB of free disk space
+- 2 GB RAM
 
-## Установка
+## Installation
 
-1. Скачайте последний релиз с [страницы релизов](https://github.com/your-username/EffinitumX/releases)
-2. Распакуйте архив
-3. Запустите `Effinitum X.exe`
+1. Download the latest release from the [releases page](https://github.com/your-username/EffinitumX/releases)
+2. Extract the archive
+3. Run `Effinitum X.exe`
 
-## Сборка из исходного кода
+## Building from Source
 
 ```
 git clone https://github.com/your-username/EffinitumX.git
@@ -37,10 +37,10 @@ cd EffinitumX
 dotnet build --configuration Release
 ```
 
-## Лицензия
+## License
 
-Проект распространяется под лицензией MIT. Подробности смотрите в файле LICENSE.
+This project is distributed under the MIT License. See the LICENSE file for details.
 
-## Автор
+## Author
 
-Создано Nicet ink © 2025 
+Created by Nicet ink © 2025 
