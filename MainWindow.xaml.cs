@@ -22,6 +22,8 @@ using SystemOptimizer.Models;
 using ModernWpf;
 using Microsoft.Win32;
 using ModernWpf.Controls;
+using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace SystemOptimizer
 {
@@ -31,6 +33,7 @@ namespace SystemOptimizer
     public partial class MainWindow : Window
     {
         private readonly SystemService _systemService;
+        private readonly ZapretService _zapretService;
         private ObservableCollection<KeyValuePair<string, string>> _systemInfoItems;
         private ObservableCollection<KeyValuePair<string, string>> _diskInfoItems;
         private ObservableCollection<FolderSizeInfo> _folderSizeItems;
@@ -42,6 +45,7 @@ namespace SystemOptimizer
         {
             InitializeComponent();
             _systemService = new SystemService();
+            _zapretService = new ZapretService();
             _settings = Settings.Load();
             
             _systemInfoItems = new ObservableCollection<KeyValuePair<string, string>>();
@@ -75,9 +79,29 @@ namespace SystemOptimizer
             cbEnableNotifications.IsChecked = _settings.EnableNotifications;
             sliderCleanupLevel.Value = _settings.CleanupLevel;
             
+            // Initialize Zapret settings
+            tsZapretEnable.IsOn = _settings.EnableZapretDiscordYouTube;
+            InitializeZapretStatus();
+            
             // Show welcome page by default
             HideAllPages();
             welcomePage.Visibility = Visibility.Visible;
+        }
+        
+        private async void InitializeZapretStatus()
+        {
+            bool isInitialized = _zapretService.IsInitialized();
+            
+            if (isInitialized && _settings.EnableZapretDiscordYouTube)
+            {
+                tsZapretEnable.IsOn = true;
+                tbZapretStatus.Text = "Обход блокировок включен";
+            }
+            else
+            {
+                tsZapretEnable.IsOn = false;
+                tbZapretStatus.Text = "Обход блокировок отключен";
+            }
         }
         
         private void LoadDrives()
@@ -134,6 +158,25 @@ namespace SystemOptimizer
             startupPage.Visibility = Visibility.Visible;
         }
         
+        private void btnWindowsTools_Click(object sender, RoutedEventArgs e)
+        {
+            HideAllPages();
+            windowsToolsPage.Visibility = Visibility.Visible;
+        }
+        
+        private void btnUwpManager_Click(object sender, RoutedEventArgs e)
+        {
+            HideAllPages();
+            uwpAppsPage.Visibility = Visibility.Visible;
+            LoadUwpApps();
+        }
+        
+        private void btnNetworkTools_Click(object sender, RoutedEventArgs e)
+        {
+            HideAllPages();
+            networkToolsPage.Visibility = Visibility.Visible;
+        }
+        
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
@@ -142,7 +185,7 @@ namespace SystemOptimizer
         
         private void MenuExit_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
         
         private void MenuAbout_Click(object sender, RoutedEventArgs e)
@@ -161,6 +204,9 @@ namespace SystemOptimizer
             processesPage.Visibility = Visibility.Collapsed;
             startupPage.Visibility = Visibility.Collapsed;
             settingsPage.Visibility = Visibility.Collapsed;
+            windowsToolsPage.Visibility = Visibility.Collapsed;
+            uwpAppsPage.Visibility = Visibility.Collapsed;
+            networkToolsPage.Visibility = Visibility.Collapsed;
         }
         
         #endregion
@@ -654,6 +700,352 @@ namespace SystemOptimizer
         private void RefreshSystemInfo_Click(object sender, RoutedEventArgs e)
         {
             LoadSystemInfo();
+        }
+
+        private async void LoadUwpApps()
+        {
+            try
+            {
+                // Здесь будет код загрузки UWP приложений
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке UWP приложений: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void btnRefreshUwpApps_Click(object sender, RoutedEventArgs e)
+        {
+            LoadUwpApps();
+        }
+        
+        private void tsDiskOptimizeEnabled_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Обработка изменения переключателя оптимизации диска
+        }
+        
+        private async void btnOptimizeDisk_Click(object sender, RoutedEventArgs e)
+        {
+            // Обработка нажатия кнопки оптимизации диска
+        }
+        
+        private void tsDefender_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Обработка переключения Windows Defender
+        }
+        
+        private void btnExcludeFolder_Click(object sender, RoutedEventArgs e)
+        {
+            // Обработка нажатия кнопки для исключения папки
+        }
+        
+        private void tsSmartScreen_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Обработка переключения Windows SmartScreen
+        }
+        
+        private void tsWindowsUpdates_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Обработка переключения обновлений Windows
+        }
+        
+        private void cbUpdateFrequency_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            // Обработка изменения частоты обновлений
+        }
+        
+        private void tsOfficeTelemetry_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Обработка переключения телеметрии Office
+        }
+        
+        private void btnOptimizeServices_Click(object sender, RoutedEventArgs e)
+        {
+            // Обработка нажатия кнопки оптимизации служб
+        }
+        
+        private void tsZapretEnable_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            
+            if (tsZapretEnable.IsOn)
+            {
+                EnableZapretAsync();
+            }
+            else
+            {
+                DisableZapretAsync();
+            }
+            
+            _settings.EnableZapretDiscordYouTube = tsZapretEnable.IsOn;
+            _settings.Save();
+        }
+        
+        private async void EnableZapretAsync()
+        {
+            try
+            {
+                bool isInitialized = _zapretService.IsInitialized();
+                
+                if (!isInitialized)
+                {
+                    // Если файлы не инициализированы, загружаем их
+                    tbZapretStatus.Text = "Загрузка необходимых файлов...";
+                    bool downloaded = await _zapretService.DownloadZapretFilesAsync();
+                    
+                    if (!downloaded)
+                    {
+                        tbZapretStatus.Text = "Ошибка загрузки файлов";
+                        tsZapretEnable.IsOn = false;
+                        return;
+                    }
+                }
+                
+                // Запускаем обход блокировок
+                bool started = await _zapretService.StartZapretAsync();
+                
+                if (started)
+                {
+                    tbZapretStatus.Text = "Обход блокировок включен";
+                    
+                    // Отображаем уведомление
+                    if (_settings.EnableNotifications)
+                    {
+                        ShowNotification("Обход блокировок активирован", 
+                            "Теперь доступ к Discord и YouTube должен работать без ограничений.");
+                    }
+                }
+                else
+                {
+                    tbZapretStatus.Text = "Ошибка запуска обхода блокировок";
+                    tsZapretEnable.IsOn = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка при активации обхода блокировок: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                tbZapretStatus.Text = "Ошибка";
+                tsZapretEnable.IsOn = false;
+            }
+        }
+        
+        private async void DisableZapretAsync()
+        {
+            try
+            {
+                // Останавливаем обход блокировок (через команду Остановить)
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-Command \"Stop-Process -Name 'zapret-discord-youtube' -Force -ErrorAction SilentlyContinue\"",
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+                
+                using (var process = Process.Start(psi))
+                {
+                    if (process != null)
+                    {
+                        await Task.Run(() => process.WaitForExit());
+                    }
+                }
+                
+                // Также останавливаем службу, если она запущена
+                await _zapretService.RemoveServiceAsync();
+                
+                tbZapretStatus.Text = "Обход блокировок отключен";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка при отключении обхода блокировок: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                tbZapretStatus.Text = "Ошибка отключения";
+            }
+        }
+        
+        private void cbZapretStartup_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            
+            try
+            {
+                bool result = _zapretService.SetRunAtStartup(true);
+                
+                if (!result)
+                {
+                    cbZapretStartup.IsChecked = false;
+                    System.Windows.MessageBox.Show("Не удалось настроить автозапуск. Попробуйте запустить программу от имени администратора.", 
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                cbZapretStartup.IsChecked = false;
+                System.Windows.MessageBox.Show($"Ошибка при настройке автозапуска: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void cbZapretStartup_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            
+            try
+            {
+                bool result = _zapretService.SetRunAtStartup(false);
+                
+                if (!result)
+                {
+                    cbZapretStartup.IsChecked = true;
+                    System.Windows.MessageBox.Show("Не удалось отключить автозапуск. Попробуйте запустить программу от имени администратора.", 
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                cbZapretStartup.IsChecked = true;
+                System.Windows.MessageBox.Show($"Ошибка при отключении автозапуска: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private async void btnZapretService_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Controls.Button btn = (System.Windows.Controls.Button)sender;
+                btn.IsEnabled = false;
+                
+                bool installed = await _zapretService.InstallAsServiceAsync();
+                
+                if (installed)
+                {
+                    tsZapretEnable.IsOn = true;
+                    tbZapretStatus.Text = "Обход блокировок установлен как сервис";
+                    
+                    // Отображаем уведомление
+                    if (_settings.EnableNotifications)
+                    {
+                        ShowNotification("Сервис обхода блокировок активирован", 
+                            "Обход блокировок будет работать в фоновом режиме.");
+                    }
+                }
+                else
+                {
+                    tbZapretStatus.Text = "Ошибка установки сервиса";
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка при установке сервиса: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                tbZapretStatus.Text = "Ошибка установки сервиса";
+            }
+            finally
+            {
+                System.Windows.Controls.Button btn = (System.Windows.Controls.Button)sender;
+                btn.IsEnabled = true;
+            }
+        }
+        
+        private async void btnZapretRestart_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Controls.Button btn = (System.Windows.Controls.Button)sender;
+                btn.IsEnabled = false;
+                
+                // Сначала останавливаем
+                DisableZapretAsync();
+                
+                // Затем запускаем снова
+                if (tsZapretEnable.IsOn)
+                {
+                    await Task.Delay(1000); // Небольшая задержка для корректного перезапуска
+                    await _zapretService.StartZapretAsync();
+                    tbZapretStatus.Text = "Обход блокировок перезапущен";
+                    
+                    // Отображаем уведомление
+                    if (_settings.EnableNotifications)
+                    {
+                        ShowNotification("Обход блокировок перезапущен", 
+                            "Перезапуск выполнен успешно.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка при перезапуске обхода блокировок: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                tbZapretStatus.Text = "Ошибка перезапуска";
+            }
+            finally
+            {
+                System.Windows.Controls.Button btn = (System.Windows.Controls.Button)sender;
+                btn.IsEnabled = true;
+            }
+        }
+        
+        private async void btnZapretStop_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Controls.Button btn = (System.Windows.Controls.Button)sender;
+                btn.IsEnabled = false;
+                
+                // Отключаем обход блокировок
+                tsZapretEnable.IsOn = false;
+                DisableZapretAsync();
+                tbZapretStatus.Text = "Обход блокировок остановлен";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка при остановке обхода блокировок: {ex.Message}", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                tbZapretStatus.Text = "Ошибка остановки";
+            }
+            finally
+            {
+                System.Windows.Controls.Button btn = (System.Windows.Controls.Button)sender;
+                btn.IsEnabled = true;
+            }
+        }
+        
+        // Метод для отображения уведомлений
+        private void ShowNotification(string title, string message)
+        {
+            var notification = new System.Windows.Forms.NotifyIcon
+            {
+                Visible = true,
+                Icon = System.Drawing.SystemIcons.Information,
+                BalloonTipTitle = title,
+                BalloonTipText = message,
+                BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info
+            };
+            
+            notification.ShowBalloonTip(5000); // Показываем на 5 секунд
+            
+            // Автоматическое удаление уведомления после показа
+            Task.Delay(6000).ContinueWith(t => 
+            {
+                notification.Dispose();
+            });
+        }
+
+        private void btnCheckDNS_Click(object sender, RoutedEventArgs e)
+        {
+            // Обработка нажатия кнопки проверки DNS
+        }
+        
+        private void btnResetTcpIp_Click(object sender, RoutedEventArgs e)
+        {
+            // Обработка нажатия кнопки сброса TCP/IP
+        }
+        
+        private void btnFlushDNS_Click(object sender, RoutedEventArgs e)
+        {
+            // Обработка нажатия кнопки очистки DNS-кэша
         }
     }
 

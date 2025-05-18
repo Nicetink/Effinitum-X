@@ -22,7 +22,7 @@
             <Image Source="Resources/logo.png" Width="64" Height="64" DockPanel.Dock="Left"/>
             <StackPanel Margin="15,0,0,0">
                 <TextBlock Text="Effinitum X" FontSize="22" FontWeight="SemiBold"/>
-                <TextBlock x:Name="tbVersion" Text="Version 1.0.0" FontSize="14" Margin="0,5,0,0"/>
+                <TextBlock x:Name="tbVersion" Text="Version 2.0.0" FontSize="14" Margin="0,5,0,0"/>
                 <TextBlock Text="Created by Nicet ink" FontSize="12" Margin="0,5,0,0" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </StackPanel>
         </DockPanel>
@@ -97,6 +97,26 @@
                     <StackPanel Margin="10">
                         <TextBlock Text="Version History" FontWeight="Bold" FontSize="16" Margin="0,0,0,15"/>
                         
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Version 2.0.0 (Major Update)" FontWeight="SemiBold"/>
+                                <TextBlock Text="May 20, 2025" FontStyle="Italic" Margin="0,5,0,5" 
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock TextWrapping="Wrap">
+                                    • Added UWP Apps Manager for uninstalling built-in apps<LineBreak/>
+                                    • Added Windows Tools (Defender, SmartScreen control)<LineBreak/>
+                                    • Added Office telemetry control<LineBreak/>
+                                    • Added Windows Services optimization<LineBreak/>
+                                    • Added Windows 10/11 update control<LineBreak/>
+                                    • Added Zapret Discord &amp; YouTube integration<LineBreak/>
+                                    • Added automated disk optimization and checking<LineBreak/>
+                                    • Improved system cleanup algorithms<LineBreak/>
+                                    • Various UI improvements and bug fixes
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
                         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
                                 Padding="15" CornerRadius="4" Margin="0,0,0,10">
                             <StackPanel>

@@ -12,6 +12,15 @@ namespace SystemOptimizer.Models
         public bool EnableNotifications { get; set; } = true;
         public int CleanupLevel { get; set; } = 2;
         
+        // Новые настройки для версии 2.0.0
+        public bool DisableWindowsDefender { get; set; } = false;
+        public bool DisableSmartScreen { get; set; } = false;
+        public bool DisableWindowsUpdates { get; set; } = false;
+        public bool DisableOfficeTelemetry { get; set; } = false;
+        public bool EnableZapretDiscordYouTube { get; set; } = false;
+        public bool EnableDiskOptimization { get; set; } = true;
+        public int DiskOptimizationSchedule { get; set; } = 7; // В днях
+        
         private static readonly string SettingsFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "SystemOptimizer",

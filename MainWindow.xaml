@@ -5,9 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SystemOptimizer"
         xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:controls="clr-namespace:ModernWpf.Controls;assembly=ModernWpf.Controls"
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
-        Title="Effinitum X" Height="680" Width="1000"
+        Title="Effinitum X" Height="720" Width="1024"
+        WindowStartupLocation="CenterScreen"
         Icon="Resources/AppIcon.ico">
     <Window.Resources>
         <Style x:Key="MenuButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -64,6 +66,12 @@
                     <Button x:Name="btnProcesses" Content="Process Manager" Style="{StaticResource MenuButtonStyle}" Click="btnProcesses_Click"/>
                     
                     <Button x:Name="btnStartup" Content="Startup Manager" Style="{StaticResource MenuButtonStyle}" Click="btnStartup_Click"/>
+                    
+                    <Button x:Name="btnWindowsTools" Content="Windows Tools" Style="{StaticResource MenuButtonStyle}" Click="btnWindowsTools_Click"/>
+                    
+                    <Button x:Name="btnUwpManager" Content="UWP Apps Manager" Style="{StaticResource MenuButtonStyle}" Click="btnUwpManager_Click"/>
+                    
+                    <Button x:Name="btnNetworkTools" Content="Network Tools" Style="{StaticResource MenuButtonStyle}" Click="btnNetworkTools_Click"/>
                     
                     <TextBlock Text="SETTINGS" Margin="10,20,5,5" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundAccentBrush}"/>
                     
@@ -161,6 +169,50 @@
                             <TextBlock Text="Cleanup Results" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
                             <TextBlock x:Name="tbCleaningResult" Text="Click 'Start Cleanup' to optimize your system" TextWrapping="Wrap"/>
                         </StackPanel>
+                        
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
+                        
+                        <Expander Header="Disk Optimization" IsExpanded="True">
+                            <StackPanel Margin="10">
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                    Автоматическая оптимизация диска включает проверку на ошибки,
+                                    дефрагментацию (для HDD) или оптимизацию TRIM (для SSD),
+                                    а также очистку системных файлов и анализ для освобождения места.
+                                </TextBlock>
+                                
+                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10">
+                                    <ComboBox x:Name="cbDiskOptimizeDrives" Width="150" DisplayMemberPath="Key">
+                                        <ComboBox.Resources>
+                                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                                <Setter Property="ui:ControlHelper.PlaceholderText" Value="Выберите диск"/>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                    </ComboBox>
+                                    <controls:ToggleSwitch x:Name="tsDiskOptimizeEnabled" 
+                                                  Header="Автоматическая оптимизация"
+                                                  OnContent="Включена" OffContent="Отключена"
+                                                  IsOn="{Binding Path=EnableDiskOptimization}"
+                                                  Toggled="tsDiskOptimizeEnabled_Toggled"/>
+                                </ui:SimpleStackPanel>
+                                
+                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                    <ComboBox x:Name="cbDiskOptimizeFrequency" Width="150" SelectedIndex="2">
+                                        <ComboBoxItem Content="Ежедневно"/>
+                                        <ComboBoxItem Content="Еженедельно"/>
+                                        <ComboBoxItem Content="Ежемесячно"/>
+                                        <ComboBoxItem Content="Вручную"/>
+                                    </ComboBox>
+                                    <Button Content="Оптимизировать сейчас" Click="btnOptimizeDisk_Click"/>
+                                </ui:SimpleStackPanel>
+                                
+                                <CheckBox x:Name="cbCheckDiskErrors" Content="Проверить диск на ошибки" IsChecked="True" Margin="0,10,0,0"/>
+                                <CheckBox x:Name="cbDefragment" Content="Дефрагментация/TRIM" IsChecked="True" Margin="0,5,0,0"/>
+                                <CheckBox x:Name="cbClearSystemFiles" Content="Очистить системные файлы" IsChecked="True" Margin="0,5,0,0"/>
+                                
+                                <ui:ProgressBar x:Name="pbDiskOptimize" Margin="0,10,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="tbDiskOptimizeStatus" Text="" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </Grid>
                 
@@ -232,6 +284,186 @@
                     </StackPanel>
                 </Grid>
                 
+                <!-- UWP Apps Manager Page -->
+                <Grid x:Name="uwpAppsPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="UWP Apps Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
+                            <TextBox x:Name="tbUwpFilter" Width="300">
+                                <TextBox.Resources>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="ui:ControlHelper.PlaceholderText" Value="Filter apps..."/>
+                                    </Style>
+                                </TextBox.Resources>
+                            </TextBox>
+                            <Button x:Name="btnRefreshUwpApps" Content="Refresh" Click="btnRefreshUwpApps_Click"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <DataGrid x:Name="dgUwpApps" AutoGenerateColumns="False" 
+                                 IsReadOnly="True" SelectionMode="Single" Height="400" 
+                                 BorderThickness="1" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="200"/>
+                                <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="120"/>
+                                <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100"/>
+                                <DataGridTemplateColumn Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Uninstall" 
+                                                    Foreground="Red"
+                                                    Command="{Binding UninstallCommand}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        
+                        <TextBlock x:Name="tbUwpStatus" Text="" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Windows Tools Page -->
+                <Grid x:Name="windowsToolsPage" Visibility="Collapsed">
+                    <ScrollViewer>
+                        <StackPanel>
+                            <TextBlock Text="Windows Tools" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                            
+                            <Expander Header="Windows Defender" IsExpanded="True" Margin="0,0,0,15">
+                                <StackPanel Margin="10">
+                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                        Windows Defender помогает защитить ваш компьютер от вирусов и вредоносных программ, 
+                                        но может потреблять системные ресурсы и замедлять работу некоторых программ.
+                                    </TextBlock>
+                                    
+                                    <controls:ToggleSwitch x:Name="tsDefender" Header="Windows Defender" 
+                                                  OnContent="Включен" OffContent="Отключен" 
+                                                  Toggled="tsDefender_Toggled"/>
+                                                  
+                                    <Button Content="Исключить папку" Margin="0,10,0,0" Click="btnExcludeFolder_Click"/>
+                                    
+                                    <TextBlock x:Name="tbDefenderStatus" Text="" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Expander>
+                            
+                            <Expander Header="Windows SmartScreen" IsExpanded="True" Margin="0,0,0,15">
+                                <StackPanel Margin="10">
+                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                        SmartScreen проверяет загружаемые файлы и запускаемые приложения на предмет безопасности, 
+                                        но может замедлять запуск некоторых приложений.
+                                    </TextBlock>
+                                    
+                                    <controls:ToggleSwitch x:Name="tsSmartScreen" Header="Windows SmartScreen" 
+                                                  OnContent="Включен" OffContent="Отключен" 
+                                                  Toggled="tsSmartScreen_Toggled"/>
+                                                  
+                                    <TextBlock x:Name="tbSmartScreenStatus" Text="" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Expander>
+                            
+                            <Expander Header="Windows Updates" IsExpanded="True" Margin="0,0,0,15">
+                                <StackPanel Margin="10">
+                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                        Автоматические обновления Windows помогают поддерживать безопасность и 
+                                        производительность системы, но могут прерывать работу и перезагружать компьютер в неудобное время.
+                                    </TextBlock>
+                                    
+                                    <controls:ToggleSwitch x:Name="tsWindowsUpdates" Header="Автоматические обновления" 
+                                                  OnContent="Включены" OffContent="Отключены" 
+                                                  Toggled="tsWindowsUpdates_Toggled"/>
+                                                  
+                                    <ComboBox x:Name="cbUpdateFrequency" Width="200" Margin="0,10,0,0"
+                                             SelectionChanged="cbUpdateFrequency_SelectionChanged">
+                                        <ComboBoxItem Content="Проверять, но не загружать"/>
+                                        <ComboBoxItem Content="Проверять и уведомлять"/>
+                                        <ComboBoxItem Content="Полностью отключить"/>
+                                    </ComboBox>
+                                    
+                                    <TextBlock x:Name="tbWindowsUpdatesStatus" Text="" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Expander>
+                            
+                            <Expander Header="Microsoft Office Telemetry" IsExpanded="True" Margin="0,0,0,15">
+                                <StackPanel Margin="10">
+                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                        Microsoft Office собирает данные о производительности и использовании для улучшения продуктов, 
+                                        но это может замедлять работу Office и отправлять ваши данные в Microsoft.
+                                    </TextBlock>
+                                    
+                                    <controls:ToggleSwitch x:Name="tsOfficeTelemetry" Header="Телеметрия Office" 
+                                                  OnContent="Включена" OffContent="Отключена" 
+                                                  Toggled="tsOfficeTelemetry_Toggled"/>
+                                                  
+                                    <TextBlock x:Name="tbOfficeTelemetryStatus" Text="" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Expander>
+                            
+                            <Expander Header="Windows Services" IsExpanded="True" Margin="0,0,0,15">
+                                <StackPanel Margin="10">
+                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                        Windows запускает множество служб в фоновом режиме, некоторые из них необязательны для работы 
+                                        и могут потреблять системные ресурсы.
+                                    </TextBlock>
+                                    
+                                    <Button Content="Оптимизировать службы Windows" Margin="0,10,0,0" Click="btnOptimizeServices_Click"/>
+                                    
+                                    <TextBlock x:Name="tbServicesStatus" Text="" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+                
+                <!-- Network Tools Page -->
+                <Grid x:Name="networkToolsPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Network Tools" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <Expander Header="Zapret Discord &amp; YouTube" IsExpanded="True" Margin="0,0,0,15">
+                            <StackPanel Margin="10">
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                    Инструмент обхода блокировок для Discord и YouTube. Использует проект zapret-discord-youtube 
+                                    для восстановления доступа к заблокированным сервисам.
+                                </TextBlock>
+                                
+                                <controls:ToggleSwitch x:Name="tsZapretEnable" Header="Обход блокировок" 
+                                                      OnContent="Включен" OffContent="Отключен" 
+                                                      Toggled="tsZapretEnable_Toggled"/>
+                                                      
+                                <CheckBox x:Name="cbZapretStartup" Content="Запускать вместе с Windows" 
+                                         Margin="0,10,0,0" Checked="cbZapretStartup_Checked" Unchecked="cbZapretStartup_Unchecked"/>
+                                         
+                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                    <Button Content="Запустить как сервис" Click="btnZapretService_Click"/>
+                                    <Button Content="Перезапустить" Click="btnZapretRestart_Click"/>
+                                    <Button Content="Остановить" Click="btnZapretStop_Click"/>
+                                </ui:SimpleStackPanel>
+                                
+                                <TextBlock x:Name="tbZapretStatus" Text="" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Expander>
+                        
+                        <Expander Header="Network Diagnostics" IsExpanded="True" Margin="0,0,0,15">
+                            <StackPanel Margin="10">
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                    Инструменты для диагностики и устранения проблем с сетью.
+                                </TextBlock>
+                                
+                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                    <Button Content="Проверить DNS" Click="btnCheckDNS_Click"/>
+                                    <Button Content="Сбросить TCP/IP" Click="btnResetTcpIp_Click"/>
+                                    <Button Content="Очистить DNS-кэш" Click="btnFlushDNS_Click"/>
+                                </ui:SimpleStackPanel>
+                                
+                                <TextBox x:Name="tbNetworkDiagOutput" IsReadOnly="True" TextWrapping="Wrap"
+                                       Height="150" Margin="0,10,0,0" BorderThickness="1"
+                                       BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </Grid>
+                
                 <!-- Startup Manager Page -->
                 <Grid x:Name="startupPage" Visibility="Collapsed">
                     <StackPanel>
@@ -253,7 +485,7 @@
                                         <GridViewColumn Header="Status" Width="100">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <ui:ToggleSwitch IsOn="{Binding IsEnabled, Mode=TwoWay}" Toggled="StartupItem_Toggled"/>
+                                                    <controls:ToggleSwitch IsOn="{Binding IsEnabled, Mode=TwoWay}" Toggled="StartupItem_Toggled"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
