@@ -5,11 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SystemOptimizer"
         xmlns:ui="http://schemas.modernwpf.com/2019"
-        xmlns:controls="clr-namespace:ModernWpf.Controls;assembly=ModernWpf.Controls"
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
-        Title="Effinitum X" Height="720" Width="1024"
-        WindowStartupLocation="CenterScreen"
+        Title="Effinitum X" Height="680" Width="1000"
         Icon="Resources/AppIcon.ico">
     <Window.Resources>
         <Style x:Key="MenuButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -20,6 +18,12 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
+
+        <!-- Конвертеры для UWP Apps -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        
+        <local:BoolToYesNoConverter x:Key="BoolToYesNoConverter"/>
+        <local:BoolToInverseConverter x:Key="BoolToInverseConverter"/>
     </Window.Resources>
     
     <Grid>
@@ -48,36 +52,74 @@
             </Grid.ColumnDefinitions>
 
             <!-- Navigation Panel -->
-            <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource SystemControlBackgroundListMediumBrush}">
-                <StackPanel Margin="5,10">
-                    <Image Source="Resources/logo.png" Width="64" Height="64" Margin="0,10,0,20" HorizontalAlignment="Left"/>
-                    
-                    <TextBlock Text="EFFINITUM X" Margin="10,5" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundAccentBrush}"/>
-                    <TextBlock Text="By Nicet ink" Margin="10,0,10,15" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    
-                    <TextBlock Text="SYSTEM TOOLS" Margin="10,5" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundAccentBrush}"/>
-                    
-                    <Button x:Name="btnSystemInfo" Content="System Information" Style="{StaticResource MenuButtonStyle}" Click="btnSystemInfo_Click"/>
-                    
-                    <Button x:Name="btnCleaner" Content="System Cleanup" Style="{StaticResource MenuButtonStyle}" Click="btnCleaner_Click"/>
-                    
-                    <Button x:Name="btnDiskAnalyzer" Content="Disk Analyzer" Style="{StaticResource MenuButtonStyle}" Click="btnDiskAnalyzer_Click"/>
-                    
-                    <Button x:Name="btnProcesses" Content="Process Manager" Style="{StaticResource MenuButtonStyle}" Click="btnProcesses_Click"/>
-                    
-                    <Button x:Name="btnStartup" Content="Startup Manager" Style="{StaticResource MenuButtonStyle}" Click="btnStartup_Click"/>
-                    
-                    <Button x:Name="btnWindowsTools" Content="Windows Tools" Style="{StaticResource MenuButtonStyle}" Click="btnWindowsTools_Click"/>
-                    
-                    <Button x:Name="btnUwpManager" Content="UWP Apps Manager" Style="{StaticResource MenuButtonStyle}" Click="btnUwpManager_Click"/>
-                    
-                    <Button x:Name="btnNetworkTools" Content="Network Tools" Style="{StaticResource MenuButtonStyle}" Click="btnNetworkTools_Click"/>
-                    
-                    <TextBlock Text="SETTINGS" Margin="10,20,5,5" FontWeight="SemiBold" Foreground="{DynamicResource SystemControlForegroundAccentBrush}"/>
-                    
-                    <Button x:Name="btnSettings" Content="Settings" Style="{StaticResource MenuButtonStyle}" Click="MenuSettings_Click"/>
-                </StackPanel>
-            </Border>
+            <ui:NavigationView Grid.Column="0" x:Name="navView" 
+                               PaneDisplayMode="Left" 
+                               IsSettingsVisible="False"
+                               IsBackButtonVisible="Collapsed"
+                               SelectionChanged="NavigationView_SelectionChanged">
+                <ui:NavigationView.MenuItems>
+                    <ui:NavigationViewItem Content="Welcome" Tag="welcome">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE80F;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                                    <ui:NavigationViewItem Content="System Information" Tag="systemInfo">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE946;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="System Cleanup" Tag="cleaner">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE74D;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Disk Analyzer" Tag="diskAnalyzer">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE7F4;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Disk Optimization" Tag="diskOptimization">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE90F;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Processes" Tag="processes">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE768;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Startup" Tag="startup">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE7B3;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="UWP Apps" Tag="uwpApps">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE71D;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Windows Defender" Tag="defender">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE72E;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Windows Updates" Tag="updates">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE896;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Zapret-Discord-YouTube" Tag="zapret">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE774;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Settings" Tag="settings">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE713;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                </ui:NavigationView.MenuItems>
+            </ui:NavigationView>
             
             <!-- Main Content -->
             <Grid Grid.Column="1" Margin="20">
@@ -169,50 +211,6 @@
                             <TextBlock Text="Cleanup Results" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
                             <TextBlock x:Name="tbCleaningResult" Text="Click 'Start Cleanup' to optimize your system" TextWrapping="Wrap"/>
                         </StackPanel>
-                        
-                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
-                        
-                        <Expander Header="Disk Optimization" IsExpanded="True">
-                            <StackPanel Margin="10">
-                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                    Автоматическая оптимизация диска включает проверку на ошибки,
-                                    дефрагментацию (для HDD) или оптимизацию TRIM (для SSD),
-                                    а также очистку системных файлов и анализ для освобождения места.
-                                </TextBlock>
-                                
-                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10">
-                                    <ComboBox x:Name="cbDiskOptimizeDrives" Width="150" DisplayMemberPath="Key">
-                                        <ComboBox.Resources>
-                                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                <Setter Property="ui:ControlHelper.PlaceholderText" Value="Выберите диск"/>
-                                            </Style>
-                                        </ComboBox.Resources>
-                                    </ComboBox>
-                                    <controls:ToggleSwitch x:Name="tsDiskOptimizeEnabled" 
-                                                  Header="Автоматическая оптимизация"
-                                                  OnContent="Включена" OffContent="Отключена"
-                                                  IsOn="{Binding Path=EnableDiskOptimization}"
-                                                  Toggled="tsDiskOptimizeEnabled_Toggled"/>
-                                </ui:SimpleStackPanel>
-                                
-                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-                                    <ComboBox x:Name="cbDiskOptimizeFrequency" Width="150" SelectedIndex="2">
-                                        <ComboBoxItem Content="Ежедневно"/>
-                                        <ComboBoxItem Content="Еженедельно"/>
-                                        <ComboBoxItem Content="Ежемесячно"/>
-                                        <ComboBoxItem Content="Вручную"/>
-                                    </ComboBox>
-                                    <Button Content="Оптимизировать сейчас" Click="btnOptimizeDisk_Click"/>
-                                </ui:SimpleStackPanel>
-                                
-                                <CheckBox x:Name="cbCheckDiskErrors" Content="Проверить диск на ошибки" IsChecked="True" Margin="0,10,0,0"/>
-                                <CheckBox x:Name="cbDefragment" Content="Дефрагментация/TRIM" IsChecked="True" Margin="0,5,0,0"/>
-                                <CheckBox x:Name="cbClearSystemFiles" Content="Очистить системные файлы" IsChecked="True" Margin="0,5,0,0"/>
-                                
-                                <ui:ProgressBar x:Name="pbDiskOptimize" Margin="0,10,0,0" Visibility="Collapsed"/>
-                                <TextBlock x:Name="tbDiskOptimizeStatus" Text="" Margin="0,5,0,0"/>
-                            </StackPanel>
-                        </Expander>
                     </StackPanel>
                 </Grid>
                 
@@ -251,216 +249,31 @@
                         <TextBlock Text="Process Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
                         
                         <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
-                            <TextBox x:Name="tbProcessFilter" Width="300">
-                                <TextBox.Resources>
-                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                        <Setter Property="ui:ControlHelper.PlaceholderText" Value="Filter processes..."/>
-                                    </Style>
-                                </TextBox.Resources>
-                            </TextBox>
+                            <TextBox x:Name="tbProcessFilter" Width="300" ui:ControlHelper.PlaceholderText="Filter processes..." />
                             <Button x:Name="btnRefreshProcesses" Content="Refresh" Click="btnRefreshProcesses_Click"/>
                         </ui:SimpleStackPanel>
                         
-                        <DataGrid x:Name="dgProcesses" AutoGenerateColumns="False" 
-                                 IsReadOnly="True" SelectionMode="Single" Height="400" 
+                        <DataGrid x:Name="dgProcesses" AutoGenerateColumns="False" IsReadOnly="True" Height="400"
                                  BorderThickness="1" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="80"/>
-                                <DataGridTextColumn Header="Process Name" Binding="{Binding Name}" Width="*"/>
-                                <DataGridTextColumn Header="Memory (MB)" Binding="{Binding MemoryUsage}" Width="100"/>
-                                <DataGridTextColumn Header="CPU %" Binding="{Binding CpuUsage}" Width="70"/>
-                                <DataGridTextColumn Header="Start Time" Binding="{Binding StartTime}" Width="150"/>
-                                <DataGridTemplateColumn Width="100">
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="200"/>
+                                <DataGridTextColumn Header="Memory (MB)" Binding="{Binding MemoryUsage, StringFormat={}{0:F2}}" Width="120"/>
+                                <DataGridTextColumn Header="CPU %" Binding="{Binding CpuUsage, StringFormat={}{0:F2}}" Width="100"/>
+                                <DataGridTextColumn Header="Start Time" Binding="{Binding StartTime}" Width="180"/>
+                                <DataGridTemplateColumn Header="Actions" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="End Task" 
-                                                    Foreground="Red"
-                                                    Command="{Binding KillProcessCommand}"/>
+                                                    Command="{Binding KillProcessCommand}"
+                                                    Padding="10,2"
+                                                    Background="IndianRed"
+                                                    Foreground="White"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-                    </StackPanel>
-                </Grid>
-                
-                <!-- UWP Apps Manager Page -->
-                <Grid x:Name="uwpAppsPage" Visibility="Collapsed">
-                    <StackPanel>
-                        <TextBlock Text="UWP Apps Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                        
-                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
-                            <TextBox x:Name="tbUwpFilter" Width="300">
-                                <TextBox.Resources>
-                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                        <Setter Property="ui:ControlHelper.PlaceholderText" Value="Filter apps..."/>
-                                    </Style>
-                                </TextBox.Resources>
-                            </TextBox>
-                            <Button x:Name="btnRefreshUwpApps" Content="Refresh" Click="btnRefreshUwpApps_Click"/>
-                        </ui:SimpleStackPanel>
-                        
-                        <DataGrid x:Name="dgUwpApps" AutoGenerateColumns="False" 
-                                 IsReadOnly="True" SelectionMode="Single" Height="400" 
-                                 BorderThickness="1" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                                <DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="200"/>
-                                <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="120"/>
-                                <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100"/>
-                                <DataGridTemplateColumn Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Content="Uninstall" 
-                                                    Foreground="Red"
-                                                    Command="{Binding UninstallCommand}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        
-                        <TextBlock x:Name="tbUwpStatus" Text="" Margin="0,10,0,0"/>
-                    </StackPanel>
-                </Grid>
-                
-                <!-- Windows Tools Page -->
-                <Grid x:Name="windowsToolsPage" Visibility="Collapsed">
-                    <ScrollViewer>
-                        <StackPanel>
-                            <TextBlock Text="Windows Tools" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                            
-                            <Expander Header="Windows Defender" IsExpanded="True" Margin="0,0,0,15">
-                                <StackPanel Margin="10">
-                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                        Windows Defender помогает защитить ваш компьютер от вирусов и вредоносных программ, 
-                                        но может потреблять системные ресурсы и замедлять работу некоторых программ.
-                                    </TextBlock>
-                                    
-                                    <controls:ToggleSwitch x:Name="tsDefender" Header="Windows Defender" 
-                                                  OnContent="Включен" OffContent="Отключен" 
-                                                  Toggled="tsDefender_Toggled"/>
-                                                  
-                                    <Button Content="Исключить папку" Margin="0,10,0,0" Click="btnExcludeFolder_Click"/>
-                                    
-                                    <TextBlock x:Name="tbDefenderStatus" Text="" Margin="0,10,0,0"/>
-                                </StackPanel>
-                            </Expander>
-                            
-                            <Expander Header="Windows SmartScreen" IsExpanded="True" Margin="0,0,0,15">
-                                <StackPanel Margin="10">
-                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                        SmartScreen проверяет загружаемые файлы и запускаемые приложения на предмет безопасности, 
-                                        но может замедлять запуск некоторых приложений.
-                                    </TextBlock>
-                                    
-                                    <controls:ToggleSwitch x:Name="tsSmartScreen" Header="Windows SmartScreen" 
-                                                  OnContent="Включен" OffContent="Отключен" 
-                                                  Toggled="tsSmartScreen_Toggled"/>
-                                                  
-                                    <TextBlock x:Name="tbSmartScreenStatus" Text="" Margin="0,10,0,0"/>
-                                </StackPanel>
-                            </Expander>
-                            
-                            <Expander Header="Windows Updates" IsExpanded="True" Margin="0,0,0,15">
-                                <StackPanel Margin="10">
-                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                        Автоматические обновления Windows помогают поддерживать безопасность и 
-                                        производительность системы, но могут прерывать работу и перезагружать компьютер в неудобное время.
-                                    </TextBlock>
-                                    
-                                    <controls:ToggleSwitch x:Name="tsWindowsUpdates" Header="Автоматические обновления" 
-                                                  OnContent="Включены" OffContent="Отключены" 
-                                                  Toggled="tsWindowsUpdates_Toggled"/>
-                                                  
-                                    <ComboBox x:Name="cbUpdateFrequency" Width="200" Margin="0,10,0,0"
-                                             SelectionChanged="cbUpdateFrequency_SelectionChanged">
-                                        <ComboBoxItem Content="Проверять, но не загружать"/>
-                                        <ComboBoxItem Content="Проверять и уведомлять"/>
-                                        <ComboBoxItem Content="Полностью отключить"/>
-                                    </ComboBox>
-                                    
-                                    <TextBlock x:Name="tbWindowsUpdatesStatus" Text="" Margin="0,10,0,0"/>
-                                </StackPanel>
-                            </Expander>
-                            
-                            <Expander Header="Microsoft Office Telemetry" IsExpanded="True" Margin="0,0,0,15">
-                                <StackPanel Margin="10">
-                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                        Microsoft Office собирает данные о производительности и использовании для улучшения продуктов, 
-                                        но это может замедлять работу Office и отправлять ваши данные в Microsoft.
-                                    </TextBlock>
-                                    
-                                    <controls:ToggleSwitch x:Name="tsOfficeTelemetry" Header="Телеметрия Office" 
-                                                  OnContent="Включена" OffContent="Отключена" 
-                                                  Toggled="tsOfficeTelemetry_Toggled"/>
-                                                  
-                                    <TextBlock x:Name="tbOfficeTelemetryStatus" Text="" Margin="0,10,0,0"/>
-                                </StackPanel>
-                            </Expander>
-                            
-                            <Expander Header="Windows Services" IsExpanded="True" Margin="0,0,0,15">
-                                <StackPanel Margin="10">
-                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                        Windows запускает множество служб в фоновом режиме, некоторые из них необязательны для работы 
-                                        и могут потреблять системные ресурсы.
-                                    </TextBlock>
-                                    
-                                    <Button Content="Оптимизировать службы Windows" Margin="0,10,0,0" Click="btnOptimizeServices_Click"/>
-                                    
-                                    <TextBlock x:Name="tbServicesStatus" Text="" Margin="0,10,0,0"/>
-                                </StackPanel>
-                            </Expander>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
-                
-                <!-- Network Tools Page -->
-                <Grid x:Name="networkToolsPage" Visibility="Collapsed">
-                    <StackPanel>
-                        <TextBlock Text="Network Tools" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                        
-                        <Expander Header="Zapret Discord &amp; YouTube" IsExpanded="True" Margin="0,0,0,15">
-                            <StackPanel Margin="10">
-                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                    Инструмент обхода блокировок для Discord и YouTube. Использует проект zapret-discord-youtube 
-                                    для восстановления доступа к заблокированным сервисам.
-                                </TextBlock>
-                                
-                                <controls:ToggleSwitch x:Name="tsZapretEnable" Header="Обход блокировок" 
-                                                      OnContent="Включен" OffContent="Отключен" 
-                                                      Toggled="tsZapretEnable_Toggled"/>
-                                                      
-                                <CheckBox x:Name="cbZapretStartup" Content="Запускать вместе с Windows" 
-                                         Margin="0,10,0,0" Checked="cbZapretStartup_Checked" Unchecked="cbZapretStartup_Unchecked"/>
-                                         
-                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-                                    <Button Content="Запустить как сервис" Click="btnZapretService_Click"/>
-                                    <Button Content="Перезапустить" Click="btnZapretRestart_Click"/>
-                                    <Button Content="Остановить" Click="btnZapretStop_Click"/>
-                                </ui:SimpleStackPanel>
-                                
-                                <TextBlock x:Name="tbZapretStatus" Text="" Margin="0,10,0,0"/>
-                            </StackPanel>
-                        </Expander>
-                        
-                        <Expander Header="Network Diagnostics" IsExpanded="True" Margin="0,0,0,15">
-                            <StackPanel Margin="10">
-                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                    Инструменты для диагностики и устранения проблем с сетью.
-                                </TextBlock>
-                                
-                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-                                    <Button Content="Проверить DNS" Click="btnCheckDNS_Click"/>
-                                    <Button Content="Сбросить TCP/IP" Click="btnResetTcpIp_Click"/>
-                                    <Button Content="Очистить DNS-кэш" Click="btnFlushDNS_Click"/>
-                                </ui:SimpleStackPanel>
-                                
-                                <TextBox x:Name="tbNetworkDiagOutput" IsReadOnly="True" TextWrapping="Wrap"
-                                       Height="150" Margin="0,10,0,0" BorderThickness="1"
-                                       BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                            </StackPanel>
-                        </Expander>
                     </StackPanel>
                 </Grid>
                 
@@ -469,38 +282,226 @@
                     <StackPanel>
                         <TextBlock Text="Startup Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
                         
+                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
+                            <Button x:Name="btnLoadStartupItems" Content="Load Startup Items" Click="btnLoadStartupItems_Click"/>
+                            <Button x:Name="btnOptimizeStartup" Content="Optimize Startup" Click="btnOptimizeStartup_Click"/>
+                            <ui:ProgressRing x:Name="startupProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <ListView x:Name="lvStartupItems" Height="400" BorderThickness="1" 
+                                 BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Enabled" Width="80">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ui:ToggleSwitch IsOn="{Binding IsEnabled, Mode=TwoWay}" Toggled="StartupItem_Toggled"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Name" Width="200" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Command" Width="250" DisplayMemberBinding="{Binding Command}"/>
+                                    <GridViewColumn Header="Publisher" Width="150" DisplayMemberBinding="{Binding Publisher}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
+                        
                         <StackPanel>
-                            <Button x:Name="btnLoadStartupItems" Content="Load Startup Items" 
-                                    HorizontalAlignment="Left" Click="btnLoadStartupItems_Click"/>
+                            <TextBlock Text="Operation Result" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="tbStartupResult" Text="Click 'Load Startup Items' to load startup items" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Disk Optimization Page -->
+                <Grid x:Name="diskOptimizationPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Disk Optimization" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <ui:SimpleStackPanel Spacing="10">
+                            <TextBlock Text="Select Drive:" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="cbOptimizeDrives" Width="200" Margin="0,0,0,10">
+                                <ComboBox.Resources>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="ui:ControlHelper.PlaceholderText" Value="Select Drive"/>
+                                    </Style>
+                                </ComboBox.Resources>
+                            </ComboBox>
+                            
+                            <GroupBox Header="Optimization Options" Padding="10">
+                                <StackPanel>
+                                    <CheckBox x:Name="cbCheckDisk" Content="Check disk for errors (CHKDSK)" IsChecked="True" Margin="0,5"/>
+                                    <CheckBox x:Name="cbDefragment" Content="Defragment disk (optimizes file placement)" IsChecked="True" Margin="0,5"/>
+                                    <CheckBox x:Name="cbCleanupDisk" Content="Clean up disk (removes temporary files)" IsChecked="True" Margin="0,5"/>
+                                </StackPanel>
+                            </GroupBox>
+                            
+                            <Button x:Name="btnStartOptimization" Content="Start Optimization" 
+                                    HorizontalAlignment="Left" Margin="0,15,0,0"
+                                    Click="btnStartOptimization_Click" Padding="20,5"/>
                                     
-                            <ui:ProgressRing x:Name="startupProgress" Visibility="Collapsed" IsActive="False" Width="20" Height="20" Margin="0,10"/>
+                            <ui:ProgressRing x:Name="diskOptimizationProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
+                        
+                        <StackPanel>
+                            <TextBlock Text="Optimization Results" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="tbOptimizationResult" Text="Click 'Start Optimization' to optimize your disk" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- UWP Apps Page -->
+                <Grid x:Name="uwpAppsPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="UWP Applications Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
+                            <Button x:Name="btnLoadUwpApps" Content="Load UWP Apps" Click="btnLoadUwpApps_Click"/>
+                            <TextBox x:Name="tbUwpFilter" Width="300" ui:ControlHelper.PlaceholderText="Filter applications..." TextChanged="TbUwpFilter_TextChanged"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <ListView x:Name="lvUwpApps" Height="400" BorderThickness="1" 
+                                 BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Name" Width="200" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Publisher" Width="150" DisplayMemberBinding="{Binding Publisher}"/>
+                                    <GridViewColumn Header="Version" Width="100" DisplayMemberBinding="{Binding Version}"/>
+                                    <GridViewColumn Header="System App" Width="80">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding IsSystem, Converter={StaticResource BoolToYesNoConverter}}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Actions" Width="100">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="Uninstall" 
+                                                        Click="BtnUninstallUwp_Click"
+                                                        Tag="{Binding PackageFamilyName}"
+                                                        IsEnabled="{Binding IsSystem, Converter={StaticResource BoolToInverseConverter}}"
+                                                        Padding="10,2"
+                                                        Background="IndianRed"
+                                                        Foreground="White"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Windows Defender Page -->
+                <Grid x:Name="defenderPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Windows Defender Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <ui:SimpleStackPanel Spacing="15">
+                            <TextBlock Text="WARNING: Disabling Windows Defender may reduce your computer's security." 
+                                       Foreground="Red" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             
-                            <ListView x:Name="lvStartupItems" Height="300" Margin="0,15,0,0" 
-                                      BorderThickness="1" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Header="Name" Width="200" DisplayMemberBinding="{Binding Name}"/>
-                                        <GridViewColumn Header="Publisher" Width="200" DisplayMemberBinding="{Binding Publisher}"/>
-                                        <GridViewColumn Header="Command" Width="300" DisplayMemberBinding="{Binding Command}"/>
-                                        <GridViewColumn Header="Status" Width="100">
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <controls:ToggleSwitch IsOn="{Binding IsEnabled, Mode=TwoWay}" Toggled="StartupItem_Toggled"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
+                            <TextBlock Text="Current status:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="tbDefenderStatus" Text="Checking..." FontWeight="Normal"/>
                             
-                            <Button x:Name="btnOptimizeStartup" Content="Optimize All Startup Items" 
-                                    Margin="0,15,0,0" HorizontalAlignment="Left" Click="btnOptimizeStartup_Click"/>
+                            <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
+                                <Button x:Name="btnDisableDefender" Content="Disable Windows Defender" 
+                                        Click="btnDisableDefender_Click" Padding="15,5"
+                                        Background="IndianRed" Foreground="White"/>
+                                        
+                                <Button x:Name="btnEnableDefender" Content="Enable Windows Defender" 
+                                        Click="btnEnableDefender_Click" Padding="15,5"/>
+                            </ui:SimpleStackPanel>
                             
-                            <TextBlock x:Name="tbStartupResult" Text="Click 'Load Startup Items' to view programs that run on system startup"
-                                      Margin="0,15,0,0" TextWrapping="Wrap"/>
-                                      
-                            <TextBlock Text="Optimizing startup items helps speed up your system boot time by disabling unnecessary programs that run at Windows startup."
-                                      TextWrapping="Wrap" Margin="0,10,0,0" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <ui:ProgressRing x:Name="defenderProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
+                        
+                        <StackPanel>
+                            <TextBlock Text="Operation Result" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="tbDefenderResult" Text="Click one of the buttons above to perform an operation" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Windows Updates Page -->
+                <Grid x:Name="updatesPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Windows Updates Manager" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <ui:SimpleStackPanel Spacing="15">
+                            <TextBlock Text="WARNING: Disabling Windows updates may make your system more vulnerable to attacks." 
+                                       Foreground="Red" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            
+                            <TextBlock Text="Current updates status:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="tbUpdatesStatus" Text="Checking..." FontWeight="Normal"/>
+                            
+                            <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
+                                <Button x:Name="btnDisableUpdates" Content="Disable Windows Updates" 
+                                        Click="btnDisableUpdates_Click" Padding="15,5"
+                                        Background="IndianRed" Foreground="White"/>
+                                        
+                                <Button x:Name="btnEnableUpdates" Content="Enable Windows Updates" 
+                                        Click="btnEnableUpdates_Click" Padding="15,5"/>
+                            </ui:SimpleStackPanel>
+                            
+                            <ui:ProgressRing x:Name="updatesProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
+                        
+                        <StackPanel>
+                            <TextBlock Text="Operation Result" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="tbUpdatesResult" Text="Click one of the buttons above to perform an operation" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Zapret-Discord-YouTube Page -->
+                <Grid x:Name="zapretPage" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Zapret-Discord-YouTube" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                        
+                        <ui:SimpleStackPanel Spacing="15">
+                            <TextBlock Text="Zapret-Discord-YouTube is a tool that helps bypass Discord and YouTube blocks in Russia." 
+                                       TextWrapping="Wrap"/>
+                            
+                            <TextBlock Text="NOTE: This tool requires administrator rights to work."
+                                       FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            
+                            <TextBlock Text="Installation status:" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="tbZapretStatus" Text="Checking..." FontWeight="Normal"/>
+                            
+                            <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
+                                <Button x:Name="btnInstallZapret" Content="Install Zapret-Discord-YouTube" 
+                                        Click="btnInstallZapret_Click" Padding="15,5"/>
+                                        
+                                <Button x:Name="btnUninstallZapret" Content="Uninstall Zapret-Discord-YouTube" 
+                                        Click="btnUninstallZapret_Click" Padding="15,5"/>
+                            </ui:SimpleStackPanel>
+                            
+                            <ui:ProgressRing x:Name="zapretProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
+                        </ui:SimpleStackPanel>
+                        
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
+                        
+                        <StackPanel>
+                            <TextBlock Text="Operation Result" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="tbZapretResult" Text="Click one of the buttons above to perform an operation" TextWrapping="Wrap"/>
+                            
+                            <TextBlock Text="Project Information:" FontWeight="SemiBold" Margin="0,20,0,5"/>
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                <Run>Zapret-Discord-YouTube is an open source project available on GitHub: </Run>
+                                <Hyperlink NavigateUri="https://github.com/Flowseal/zapret-discord-youtube" RequestNavigate="Hyperlink_RequestNavigate">
+                                    https://github.com/Flowseal/zapret-discord-youtube
+                                </Hyperlink>
+                            </TextBlock>
                         </StackPanel>
                     </StackPanel>
                 </Grid>

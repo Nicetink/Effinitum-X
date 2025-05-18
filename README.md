@@ -9,8 +9,13 @@ Effinitum X is a powerful Windows system optimization and cleanup application.
 - **System Information**: Detailed information about CPU, memory, disks, and other system components
 - **System Cleanup**: Remove temporary files, clean recycle bin, browser cache, and other unnecessary files
 - **Disk Analyzer**: Find and visualize large files to free up disk space
+- **Disk Optimization**: Check and optimize your disks with CHKDSK and defragmentation tools
 - **Process Manager**: View and manage running processes with the ability to terminate them
 - **Startup Manager**: View and optimize programs that start with Windows
+- **UWP Apps Manager**: View and uninstall UWP applications from your system
+- **Windows Defender Control**: Enable or disable Windows Defender with a single click
+- **Windows Update Manager**: Control Windows Update service to stop automatic updates
+- **Zapret-Discord-YouTube Integration**: Helps to bypass Discord and YouTube blocks in certain regions
 
 ## Screenshots
 
@@ -24,6 +29,7 @@ Effinitum X is a powerful Windows system optimization and cleanup application.
 - .NET 9.0 or higher
 - 50 MB of free disk space
 - 2 GB RAM
+- Administrator rights (required for some features)
 
 ## Installation
 
@@ -38,6 +44,16 @@ git clone https://github.com/Nicetink/Effinitum-X.git
 cd EffinitumX
 dotnet build --configuration Release
 ```
+
+## Latest Changes (v1.2.2)
+
+- Added UWP apps management and uninstallation
+- Added Windows Defender control
+- Added Windows Update management
+- Added Zapret-Discord-YouTube integration
+- Added disk optimization with CHKDSK and defrag
+- Improved user interface with navigation view
+- Various bug fixes and performance improvements
 
 ## License
 

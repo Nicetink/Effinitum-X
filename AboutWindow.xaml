@@ -22,7 +22,7 @@
             <Image Source="Resources/logo.png" Width="64" Height="64" DockPanel.Dock="Left"/>
             <StackPanel Margin="15,0,0,0">
                 <TextBlock Text="Effinitum X" FontSize="22" FontWeight="SemiBold"/>
-                <TextBlock x:Name="tbVersion" Text="Version 2.0.0" FontSize="14" Margin="0,5,0,0"/>
+                <TextBlock x:Name="tbVersion" Text="Version 1.2.2" FontSize="14" Margin="0,5,0,0"/>
                 <TextBlock Text="Created by Nicet ink" FontSize="12" Margin="0,5,0,0" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </StackPanel>
         </DockPanel>
@@ -45,9 +45,13 @@
                                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
                                     • System information and hardware monitoring<LineBreak/>
                                     • Temporary files and system cleanup<LineBreak/>
-                                    • Advanced disk space analyzer<LineBreak/>
+                                    • Advanced disk space analyzer and optimization<LineBreak/>
                                     • Process management and optimization<LineBreak/>
-                                    • Startup programs management
+                                    • Startup programs management<LineBreak/>
+                                    • UWP apps management and uninstallation<LineBreak/>
+                                    • Windows Defender control<LineBreak/>
+                                    • Windows Update management<LineBreak/>
+                                    • Zapret-Discord-YouTube integration for accessing blocked services
                                 </TextBlock>
                             </StackPanel>
                         </Border>
@@ -100,23 +104,21 @@
                         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
                                 Padding="15" CornerRadius="4" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="Version 2.0.0 (Major Update)" FontWeight="SemiBold"/>
-                                <TextBlock Text="May 20, 2025" FontStyle="Italic" Margin="0,5,0,5" 
+                                <TextBlock Text="Version 1.2.2" FontWeight="SemiBold"/>
+                                <TextBlock Text="May 18, 2025" FontStyle="Italic" Margin="0,5,0,5" 
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock TextWrapping="Wrap">
-                                    • Added UWP Apps Manager for uninstalling built-in apps<LineBreak/>
-                                    • Added Windows Tools (Defender, SmartScreen control)<LineBreak/>
-                                    • Added Office telemetry control<LineBreak/>
-                                    • Added Windows Services optimization<LineBreak/>
-                                    • Added Windows 10/11 update control<LineBreak/>
-                                    • Added Zapret Discord &amp; YouTube integration<LineBreak/>
-                                    • Added automated disk optimization and checking<LineBreak/>
-                                    • Improved system cleanup algorithms<LineBreak/>
-                                    • Various UI improvements and bug fixes
+                                    • Added UWP apps management and uninstallation<LineBreak/>
+                                    • Added Windows Defender control<LineBreak/>
+                                    • Added Windows Update management<LineBreak/>
+                                    • Added Zapret-Discord-YouTube integration<LineBreak/>
+                                    • Added disk optimization with CHKDSK and defrag<LineBreak/>
+                                    • Improved user interface with navigation view<LineBreak/>
+                                    • Various bug fixes and performance improvements
                                 </TextBlock>
                             </StackPanel>
                         </Border>
-
+                        
                         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
                                 Padding="15" CornerRadius="4" Margin="0,0,0,10">
                             <StackPanel>

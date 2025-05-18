@@ -18,7 +18,7 @@ namespace SystemOptimizer
             }
             else
             {
-                tbVersion.Text = "Version 1.0.0";
+                tbVersion.Text = "Version 1.2.2";
             }
         }
         

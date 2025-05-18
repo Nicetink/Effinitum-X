@@ -1,25 +1,14 @@
 using System;
-using System.Windows.Input;
 
 namespace SystemOptimizer.Models
 {
     public class UwpApp
     {
-        public string Name { get; set; }
-        public string Publisher { get; set; }
-        public string Version { get; set; }
-        public string Size { get; set; }
-        public string PackageFullName { get; set; }
-        public ICommand? UninstallCommand { get; set; }
-        
-        public UwpApp()
-        {
-            Name = string.Empty;
-            Publisher = string.Empty;
-            Version = string.Empty;
-            Size = string.Empty;
-            PackageFullName = string.Empty;
-            UninstallCommand = null;
-        }
+        public string Name { get; set; } = string.Empty;
+        public string PackageFamilyName { get; set; } = string.Empty;
+        public string Publisher { get; set; } = string.Empty;
+        public string InstallLocation { get; set; } = string.Empty;
+        public bool IsSystem { get; set; }
+        public string Version { get; set; } = string.Empty;
     }
 } 
