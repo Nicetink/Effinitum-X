@@ -45,7 +45,16 @@ cd EffinitumX
 dotnet build --configuration Release
 ```
 
-## Latest Changes (v1.2.2)
+## Latest Changes (v1.6.0)
+
+- Added automatic updates from GitHub repository
+- Improved logging system with new Logger class
+- Fixed "Value cannot be null (Parameter 'value')" error on startup
+- Enhanced application loading screen with progress indicator
+- Optimized application initialization process
+- General performance and stability improvements
+
+## Previous Updates (v1.2.2)
 
 - Added UWP apps management and uninstallation
 - Added Windows Defender control
