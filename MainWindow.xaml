@@ -8,7 +8,11 @@
         ui:WindowHelper.UseModernWindowStyle="True"
         mc:Ignorable="d"
         Title="Effinitum X" Height="680" Width="1000"
-        Icon="Resources/AppIcon.ico">
+        Icon="Resources/AppIcon.ico"
+        Visibility="Visible"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        Loaded="MainWindow_Loaded">
     <Window.Resources>
         <Style x:Key="MenuButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Margin" Value="5"/>
@@ -39,6 +43,7 @@
             </MenuItem>
             <MenuItem Header="Tools">
                 <MenuItem Header="Settings" Click="MenuSettings_Click"/>
+                <MenuItem Header="Check for Updates" Click="MenuCheckUpdates_Click"/>
             </MenuItem>
             <MenuItem Header="Help">
                 <MenuItem Header="About" Click="MenuAbout_Click"/>
@@ -81,6 +86,11 @@
                 <ui:NavigationViewItem Content="Disk Optimization" Tag="diskOptimization">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE90F;" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Enhanced Optimizer" Tag="enhancedOptimizer">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xEA80;" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="Processes" Tag="processes">
@@ -331,11 +341,13 @@
                             </ComboBox>
                             
                             <GroupBox Header="Optimization Options" Padding="10">
-                                <StackPanel>
+                                <ui:SimpleStackPanel Spacing="5">
                                     <CheckBox x:Name="cbCheckDisk" Content="Check disk for errors (CHKDSK)" IsChecked="True" Margin="0,5"/>
                                     <CheckBox x:Name="cbDefragment" Content="Defragment disk (optimizes file placement)" IsChecked="True" Margin="0,5"/>
                                     <CheckBox x:Name="cbCleanupDisk" Content="Clean up disk (removes temporary files)" IsChecked="True" Margin="0,5"/>
-                                </StackPanel>
+                                    <CheckBox x:Name="cbTrimSSD" Content="Run TRIM command (for SSD only)" IsChecked="True" Margin="0,5"/>
+                                    <TextBlock Text="Note: Some operations may require administrator rights." FontStyle="Italic" Margin="0,5" TextWrapping="Wrap"/>
+                                </ui:SimpleStackPanel>
                             </GroupBox>
                             
                             <Button x:Name="btnStartOptimization" Content="Start Optimization" 
@@ -343,15 +355,103 @@
                                     Click="btnStartOptimization_Click" Padding="20,5"/>
                                     
                             <ui:ProgressRing x:Name="diskOptimizationProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
+                            
+                            <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,10,0,10" />
+                            
+                            <TextBlock Text="Optimization Results:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock x:Name="tbOptimizationResult" Text="Click 'Start Optimization' to begin the disk optimization process" TextWrapping="Wrap"/>
                         </ui:SimpleStackPanel>
-                        
-                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
-                        
-                        <StackPanel>
-                            <TextBlock Text="Optimization Results" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                            <TextBlock x:Name="tbOptimizationResult" Text="Click 'Start Optimization' to optimize your disk" TextWrapping="Wrap"/>
-                        </StackPanel>
                     </StackPanel>
+                </Grid>
+                
+                <!-- Enhanced System Optimizer Page -->
+                <Grid x:Name="enhancedOptimizerPage" Visibility="Collapsed">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,0,10,0">
+                            <TextBlock Text="Enhanced System Optimizer" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                            
+                            <TextBlock Text="This tool provides advanced system optimization with multiple tweaking options. Choose the components to optimize and the optimization level." 
+                                       TextWrapping="Wrap" Margin="0,0,0,15"/>
+                            
+                            <GroupBox Header="Optimization Components" Padding="15,10">
+                                <ui:SimpleStackPanel Spacing="8">
+                                    <CheckBox x:Name="cbOptimizePerformance" Content="System Performance" IsChecked="True" ToolTip="Optimize Windows visual effects and background services"/>
+                                    <CheckBox x:Name="cbOptimizeDisk" Content="Disk Space and Performance" IsChecked="True" ToolTip="Clean temporary files and optimize disk access"/>
+                                    <CheckBox x:Name="cbOptimizeMemory" Content="Memory Usage" IsChecked="True" ToolTip="Configure virtual memory and pagefile settings"/>
+                                    <CheckBox x:Name="cbOptimizeStartup" Content="System Startup" IsChecked="True" ToolTip="Disable unnecessary startup items"/>
+                                    <CheckBox x:Name="cbOptimizeBrowser" Content="Browsers" IsChecked="True" ToolTip="Clean browser cache and optimize settings"/>
+                                    <CheckBox x:Name="cbOptimizeNetwork" Content="Network Performance" IsChecked="True" ToolTip="Optimize TCP/IP settings and connectivity"/>
+                                </ui:SimpleStackPanel>
+                            </GroupBox>
+                            
+                            <GroupBox Header="Optimization Level" Margin="0,15,0,0" Padding="15,10">
+                                <ui:SimpleStackPanel Spacing="10">
+                                    <RadioButton x:Name="rbLightOptimization" Content="Light: Basic optimizations, safe for all systems" IsChecked="True" GroupName="OptimizationLevel"/>
+                                    <RadioButton x:Name="rbMediumOptimization" Content="Medium: Moderate optimizations, recommended for most users" GroupName="OptimizationLevel"/>
+                                    <RadioButton x:Name="rbAggresiveOptimization" Content="Aggressive: Maximum optimizations, for power users" GroupName="OptimizationLevel"/>
+                                    
+                                    <TextBlock Text="Note: Higher optimization levels may disable more features but provide better performance." 
+                                               FontStyle="Italic" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                </ui:SimpleStackPanel>
+                            </GroupBox>
+                            
+                            <Button x:Name="btnStartEnhancedOptimization" Content="Start System Optimization" 
+                                    HorizontalAlignment="Left" Margin="0,20,0,10"
+                                    Click="btnStartEnhancedOptimization_Click" Padding="20,5"/>
+                                    
+                            <ui:ProgressRing x:Name="enhancedOptimizerProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,5,0,5"/>
+                            
+                            <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,10,0,10" />
+                            
+                            <GroupBox Header="System Performance Monitor" Margin="0,5,0,15" Padding="15,10">
+                                <Grid Height="230">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <ui:SimpleStackPanel Orientation="Horizontal" Spacing="20" Margin="0,0,0,10">
+                                        <ui:SimpleStackPanel>
+                                            <TextBlock Text="CPU Usage:" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="tbCpuUsage" Text="0%" FontSize="20"/>
+                                        </ui:SimpleStackPanel>
+                                        
+                                        <ui:SimpleStackPanel>
+                                            <TextBlock Text="Memory Usage:" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="tbMemoryUsagePercent" Text="0%" FontSize="20"/>
+                                        </ui:SimpleStackPanel>
+                                        
+                                        <ui:SimpleStackPanel>
+                                            <TextBlock Text="Disk Activity:" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="tbDiskUsage" Text="0%" FontSize="20"/>
+                                        </ui:SimpleStackPanel>
+                                        
+                                        <Button x:Name="btnRefreshPerformance" Content="Refresh" Click="btnRefreshPerformance_Click"
+                                                VerticalAlignment="Bottom"/>
+                                    </ui:SimpleStackPanel>
+                                    
+                                    <Canvas x:Name="performanceGraph" Grid.Row="1" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" 
+                                            Height="180">
+                                        <!-- График будет отрисовываться программно -->
+                                    </Canvas>
+                                </Grid>
+                            </GroupBox>
+                            
+                            <GroupBox Header="Optimization Results" Padding="15,10">
+                                <ui:SimpleStackPanel Spacing="10">
+                                    <TextBlock x:Name="tbEnhancedOptimizerResult" Text="Click 'Start System Optimization' to begin the optimization process" TextWrapping="Wrap"/>
+                                    
+                                    <ListView x:Name="lvOptimizationActions" Height="150" Visibility="Collapsed">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Optimization" Width="500"/>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+                                </ui:SimpleStackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
                 
                 <!-- UWP Apps Page -->
@@ -366,9 +466,9 @@
                         
                         <ListView x:Name="lvUwpApps" Height="400" BorderThickness="1" 
                                  BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="Name" Width="200" DisplayMemberBinding="{Binding Name}"/>
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Name" Width="200" DisplayMemberBinding="{Binding Name}"/>
                                     <GridViewColumn Header="Publisher" Width="150" DisplayMemberBinding="{Binding Publisher}"/>
                                     <GridViewColumn Header="Version" Width="100" DisplayMemberBinding="{Binding Version}"/>
                                     <GridViewColumn Header="System App" Width="80">
@@ -379,8 +479,8 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="Actions" Width="100">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
                                                 <Button Content="Uninstall" 
                                                         Click="BtnUninstallUwp_Click"
                                                         Tag="{Binding PackageFamilyName}"
@@ -388,12 +488,12 @@
                                                         Padding="10,2"
                                                         Background="IndianRed"
                                                         Foreground="White"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
                     </StackPanel>
                 </Grid>
                 
@@ -465,45 +565,84 @@
                 
                 <!-- Zapret-Discord-YouTube Page -->
                 <Grid x:Name="zapretPage" Visibility="Collapsed">
-                    <StackPanel>
-                        <TextBlock Text="Zapret-Discord-YouTube" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                        
-                        <ui:SimpleStackPanel Spacing="15">
-                            <TextBlock Text="Zapret-Discord-YouTube is a tool that helps bypass Discord and YouTube blocks in Russia." 
-                                       TextWrapping="Wrap"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Zapret-Discord-YouTube" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
                             
-                            <TextBlock Text="NOTE: This tool requires administrator rights to work."
-                                       FontWeight="SemiBold" TextWrapping="Wrap"/>
-                            
-                            <TextBlock Text="Installation status:" FontWeight="SemiBold"/>
-                            <TextBlock x:Name="tbZapretStatus" Text="Checking..." FontWeight="Normal"/>
-                            
-                            <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
-                                <Button x:Name="btnInstallZapret" Content="Install Zapret-Discord-YouTube" 
-                                        Click="btnInstallZapret_Click" Padding="15,5"/>
+                            <ui:SimpleStackPanel Spacing="15">
+                                <TextBlock Text="Zapret-Discord-YouTube is a tool that helps bypass Discord and YouTube blocks in restricted regions." 
+                                           TextWrapping="Wrap"/>
+                                
+                                <TextBlock Text="NOTE: This tool requires administrator rights to work."
+                                           FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                
+                                <GroupBox Header="Status" Padding="15,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
                                         
-                                <Button x:Name="btnUninstallZapret" Content="Uninstall Zapret-Discord-YouTube" 
-                                        Click="btnUninstallZapret_Click" Padding="15,5"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Installation:" FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="tbZapretStatus" Text="Checking..." Margin="0,0,0,5"/>
+                                        
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Version:" FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="tbZapretVersion" Text="Not installed" Margin="0,0,0,5"/>
+                                        
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Running:" FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="tbZapretRunning" Text="No" Margin="0,0,0,5"/>
+                                        
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Discord:" FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                        <ui:SimpleStackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                            <TextBlock x:Name="tbDiscordStatus" Text="Disabled"/>
+                                            <ToggleButton x:Name="toggleDiscord" Click="toggleDiscord_Click" IsEnabled="False"/>
+                                        </ui:SimpleStackPanel>
+                                        
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="YouTube:" FontWeight="SemiBold" Margin="0,0,10,5"/>
+                                        <ui:SimpleStackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                            <TextBlock x:Name="tbYouTubeStatus" Text="Disabled"/>
+                                            <ToggleButton x:Name="toggleYouTube" Click="toggleYouTube_Click" IsEnabled="False"/>
+                                        </ui:SimpleStackPanel>
+                                    </Grid>
+                                </GroupBox>
+                                
+                                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
+                                    <Button x:Name="btnInstallZapret" Content="Install Zapret-Discord-YouTube" 
+                                            Click="btnInstallZapret_Click" Padding="15,5"/>
+                                            
+                                    <Button x:Name="btnUninstallZapret" Content="Uninstall Zapret-Discord-YouTube" 
+                                            Click="btnUninstallZapret_Click" Padding="15,5"/>
+                                    
+                                    <Button x:Name="btnRefreshZapretStatus" Content="Refresh Status" 
+                                            Click="btnRefreshZapretStatus_Click" Padding="15,5"/>
+                                </ui:SimpleStackPanel>
+                                
+                                <ui:ProgressRing x:Name="zapretProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
                             </ui:SimpleStackPanel>
                             
-                            <ui:ProgressRing x:Name="zapretProgress" Visibility="Collapsed" IsActive="False" Width="25" Height="25" Margin="0,10,0,0"/>
-                        </ui:SimpleStackPanel>
-                        
-                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
-                        
-                        <StackPanel>
-                            <TextBlock Text="Operation Result" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                            <TextBlock x:Name="tbZapretResult" Text="Click one of the buttons above to perform an operation" TextWrapping="Wrap"/>
+                            <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,20,0,15" />
                             
-                            <TextBlock Text="Project Information:" FontWeight="SemiBold" Margin="0,20,0,5"/>
-                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                                <Run>Zapret-Discord-YouTube is an open source project available on GitHub: </Run>
-                                <Hyperlink NavigateUri="https://github.com/Flowseal/zapret-discord-youtube" RequestNavigate="Hyperlink_RequestNavigate">
-                                    https://github.com/Flowseal/zapret-discord-youtube
-                                </Hyperlink>
-                            </TextBlock>
+                            <StackPanel>
+                                <TextBlock Text="Operation Result" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <TextBlock x:Name="tbZapretResult" Text="Click one of the buttons above to perform an operation" TextWrapping="Wrap"/>
+                                
+                                <TextBlock Text="Project Information:" FontWeight="SemiBold" Margin="0,20,0,5"/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                    <Run>Zapret-Discord-YouTube is an open source project available on GitHub: </Run>
+                                    <Hyperlink NavigateUri="https://github.com/Flowseal/zapret-discord-youtube" RequestNavigate="Hyperlink_RequestNavigate">
+                                        https://github.com/Flowseal/zapret-discord-youtube
+                                    </Hyperlink>
+                                </TextBlock>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </ScrollViewer>
                 </Grid>
                 
                 <!-- Settings Page -->
@@ -528,6 +667,7 @@
                             <CheckBox x:Name="cbRunAtStartup" Content="Run at Windows startup"/>
                             <CheckBox x:Name="cbMinimizeToTray" Content="Minimize to system tray instead of taskbar"/>
                             <CheckBox x:Name="cbEnableNotifications" Content="Show system notifications" IsChecked="True"/>
+                            <CheckBox x:Name="cbCheckUpdatesAtStartup" Content="Check for updates at startup" IsChecked="True"/>
                             
                             <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}" Margin="0,5"/>
                             

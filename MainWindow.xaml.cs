@@ -22,6 +22,7 @@ using SystemOptimizer.Models;
 using ModernWpf;
 using Microsoft.Win32;
 using ModernWpf.Controls;
+using System.Diagnostics;
 
 namespace SystemOptimizer
 {
@@ -37,51 +38,133 @@ namespace SystemOptimizer
         private ObservableCollection<ProcessViewModel> _processItems;
         private ObservableCollection<StartupItem> _startupItems;
         private Settings _settings;
+        private UpdateManager _updateManager;
 
         public MainWindow()
         {
+            try
+            {
+                // Initialize logger and record start of work
+                Logger.LogInfo("Starting main window initialization");
+                
             InitializeComponent();
+
+                // Initialize services
             _systemService = new SystemService();
             _settings = Settings.Load();
+                _updateManager = new UpdateManager();
+                _updateManager.UpdateCheckCompleted += UpdateManager_UpdateCheckCompleted;
             
+                // Initialize data collections
             _systemInfoItems = new ObservableCollection<KeyValuePair<string, string>>();
             _diskInfoItems = new ObservableCollection<KeyValuePair<string, string>>();
             _folderSizeItems = new ObservableCollection<FolderSizeInfo>();
             _processItems = new ObservableCollection<ProcessViewModel>();
             _startupItems = new ObservableCollection<StartupItem>();
             
-            lvSystemInfo.ItemsSource = _systemInfoItems;
-            lvDiskInfo.ItemsSource = _diskInfoItems;
-            lvFolderSize.ItemsSource = _folderSizeItems;
-            dgProcesses.ItemsSource = _processItems;
-            lvStartupItems.ItemsSource = _startupItems;
-            
-            // Initialize drives combobox
+                // Инициализируем мониторинг производительности
+                InitializePerformanceMonitoring();
+                
+                // Привязка коллекций к элементам интерфейса
+                if (lvSystemInfo != null) lvSystemInfo.ItemsSource = _systemInfoItems;
+                if (lvDiskInfo != null) lvDiskInfo.ItemsSource = _diskInfoItems;
+                if (lvFolderSize != null) lvFolderSize.ItemsSource = _folderSizeItems;
+                if (dgProcesses != null) dgProcesses.ItemsSource = _processItems;
+                if (lvStartupItems != null) lvStartupItems.ItemsSource = _startupItems;
+                
+                // Инициализация списка дисков
             LoadDrives();
             
-            // Set up process filtering
-            tbProcessFilter.TextChanged += TbProcessFilter_TextChanged;
+                // Настройка обработки фильтрации процессов
+                if (tbProcessFilter != null) tbProcessFilter.TextChanged += TbProcessFilter_TextChanged;
             
-            // Set up theme based on settings
+                // Применение темы из настроек
             ApplyThemeSettings();
             
-            // Set up cleanup level display
-            sliderCleanupLevel.ValueChanged += SliderCleanupLevel_ValueChanged;
+                // Настройка отображения уровня очистки
+                if (sliderCleanupLevel != null) sliderCleanupLevel.ValueChanged += SliderCleanupLevel_ValueChanged;
             UpdateCleanupLevelText();
             
-            // Load other settings
-            cbRunAtStartup.IsChecked = _settings.RunAtStartup;
-            cbMinimizeToTray.IsChecked = _settings.MinimizeToTray;
-            cbEnableNotifications.IsChecked = _settings.EnableNotifications;
-            sliderCleanupLevel.Value = _settings.CleanupLevel;
-            
-            // Show welcome page by default
+                // Загрузка других настроек
+                if (cbRunAtStartup != null) cbRunAtStartup.IsChecked = _settings.RunAtStartup;
+                if (cbMinimizeToTray != null) cbMinimizeToTray.IsChecked = _settings.MinimizeToTray;
+                if (cbEnableNotifications != null) cbEnableNotifications.IsChecked = _settings.EnableNotifications;
+                if (cbCheckUpdatesAtStartup != null) cbCheckUpdatesAtStartup.IsChecked = _settings.CheckUpdatesAtStartup;
+                if (sliderCleanupLevel != null) sliderCleanupLevel.Value = _settings.CleanupLevel;
+                
+                // Показ начальной страницы
             HideAllPages();
-            welcomePage.Visibility = Visibility.Visible;
+                if (welcomePage != null) welcomePage.Visibility = Visibility.Visible;
+                
+                // Регистрируем обработчики событий для мониторинга
+                this.Loaded += MainWindow_Loaded;
+                this.Activated += MainWindow_Activated;
+                this.ContentRendered += MainWindow_ContentRendered;
+                
+                Logger.LogInfo("Main window initialization completed");
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Logger.LogError("Critical error during main window initialization", ex);
+                }
+                catch
+                {
+                    // If even the logger doesn't work, write to file
+                    File.AppendAllText("critical_error.log", $"{DateTime.Now}: ERROR during initialization: {ex.Message}\n{ex.StackTrace}\n");
+                }
+                
+                MessageBox.Show($"Critical error initializing main window:\n{ex.Message}\n\nCheck the log file for more information.", 
+                               "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Use Logger instead of direct file writing
+                Logger.LogInfo("Main window Loaded event");
+                
+                // Final check for window visibility
+                this.Visibility = Visibility.Visible;
+                this.Activate();
+                this.Focus();
+                
+                // Check for updates if enabled in settings
+                if (_settings.CheckUpdatesAtStartup)
+                {
+                    CheckForUpdates();
+                }
+                
+                Logger.LogInfo($"Window status - Visibility: {this.Visibility}, IsActive: {this.IsActive}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error in MainWindow_Loaded handler", ex);
+            }
+        }
+
+        private void MainWindow_Activated(object sender, EventArgs e)
+        {
+            File.AppendAllText("app_log.txt", $"{DateTime.Now}: Событие Activated главного окна\n");
+        }
+
+        private void MainWindow_ContentRendered(object sender, EventArgs e)
+        {
+            File.AppendAllText("app_log.txt", $"{DateTime.Now}: Событие ContentRendered главного окна\n");
+            
+            // Force UI update to ensure window is rendered correctly
+            this.UpdateLayout();
         }
         
         private void LoadDrives()
         {
+            try
+            {
+                if (cbDrives == null) return;
+                
             cbDrives.Items.Clear();
             foreach (var drive in DriveInfo.GetDrives())
             {
@@ -97,47 +180,170 @@ namespace SystemOptimizer
             if (cbDrives.Items.Count > 0)
             {
                 cbDrives.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка при загрузке дисков: {ex.Message}");
             }
         }
+
+        #region Application Updates
+        
+        private async void CheckForUpdates()
+        {
+            try
+            {
+                Logger.LogInfo("Starting update check");
+                var updateInfo = await _updateManager.CheckForUpdates();
+                
+                // Processing of check results happens in the UpdateCheckCompleted event handler
+                Logger.LogInfo($"Update check completed. Current version: {updateInfo.CurrentVersion}, Latest version: {updateInfo.LatestVersion}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error checking for updates", ex);
+            }
+        }
+        
+        private void UpdateManager_UpdateCheckCompleted(object sender, UpdateEventArgs e)
+        {
+            try
+            {
+                if (e.UpdateInfo.IsUpdateAvailable)
+                {
+                    Logger.LogInfo($"Обнаружено обновление: {e.UpdateInfo.LatestVersion}");
+                    
+                    var result = MessageBox.Show(
+                        $"A new version of the application is available: {e.UpdateInfo.LatestVersion}\n" +
+                        $"Your current version: {e.UpdateInfo.CurrentVersion}\n\n" +
+                        $"Release notes:\n{e.UpdateInfo.ReleaseNotes}\n\n" +
+                        "Do you want to update the application now?",
+                        "Update Available",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+                    
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        InstallUpdate(e.UpdateInfo);
+                    }
+                    else
+                    {
+                        Logger.LogInfo("Пользователь отказался от установки обновления");
+                    }
+                }
+                else if (!string.IsNullOrEmpty(e.UpdateInfo.ErrorMessage))
+                {
+                    Logger.LogWarning($"Ошибка при проверке обновлений: {e.UpdateInfo.ErrorMessage}");
+                }
+                else
+                {
+                    Logger.LogInfo("Обновлений не найдено, используется актуальная версия");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Ошибка при обработке события обновления", ex);
+            }
+        }
+        
+        private async void InstallUpdate(UpdateInfo updateInfo)
+        {
+            try
+            {
+                Logger.LogInfo($"Начало установки обновления {updateInfo.LatestVersion}");
+                
+                // Create a simple update progress dialog
+                ModernWpf.Controls.ContentDialog dialog = new ModernWpf.Controls.ContentDialog()
+                {
+                    Title = "Installing Update",
+                    Content = "Downloading and installing update...\nPlease do not close the application.",
+                    CloseButtonText = null,
+                    IsPrimaryButtonEnabled = false,
+                    IsSecondaryButtonEnabled = false
+                };
+                
+                // Запускаем диалог и скачивание обновления параллельно
+                var dialogTask = dialog.ShowAsync();
+                
+                bool success = await _updateManager.DownloadAndInstallUpdate(updateInfo);
+                
+                // Закрываем диалог
+                dialog.Hide();
+                
+                if (success)
+                {
+                    Logger.LogInfo("Обновление успешно загружено и подготовлено к установке");
+                    
+                    MessageBox.Show(
+                        "The update was successfully downloaded and will be installed the next time you start the application.",
+                        "Update Ready",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                else
+                {
+                    Logger.LogWarning("Не удалось загрузить или установить обновление");
+                    
+                    MessageBox.Show(
+                        "Failed to download or install the update. Please try again later.",
+                        "Update Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Произошла ошибка при установке обновления", ex);
+                
+                MessageBox.Show(
+                    $"Произошла ошибка при установке обновления: {ex.Message}",
+                    "Ошибка обновления",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+        
+        #endregion
 
         #region Обработчики событий меню
         
         private void btnSystemInfo_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
-            systemInfoPage.Visibility = Visibility.Visible;
+            if (systemInfoPage != null) systemInfoPage.Visibility = Visibility.Visible;
             LoadSystemInfo();
         }
 
         private void btnCleaner_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
-            cleanerPage.Visibility = Visibility.Visible;
+            if (cleanerPage != null) cleanerPage.Visibility = Visibility.Visible;
         }
 
         private void btnDiskAnalyzer_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
-            diskAnalyzerPage.Visibility = Visibility.Visible;
+            if (diskAnalyzerPage != null) diskAnalyzerPage.Visibility = Visibility.Visible;
         }
 
         private void btnProcesses_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
-            processesPage.Visibility = Visibility.Visible;
+            if (processesPage != null) processesPage.Visibility = Visibility.Visible;
             LoadProcesses();
         }
 
         private void btnStartup_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
-            startupPage.Visibility = Visibility.Visible;
+            if (startupPage != null) startupPage.Visibility = Visibility.Visible;
         }
         
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
             HideAllPages();
-            settingsPage.Visibility = Visibility.Visible;
+            if (settingsPage != null) settingsPage.Visibility = Visibility.Visible;
         }
         
         private void MenuExit_Click(object sender, RoutedEventArgs e)
@@ -152,20 +358,87 @@ namespace SystemOptimizer
             aboutWindow.ShowDialog();
         }
         
+        private void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            CheckForUpdatesManually();
+        }
+        
+        private async void CheckForUpdatesManually()
+        {
+            try
+            {
+                ModernWpf.Controls.ContentDialog dialog = new ModernWpf.Controls.ContentDialog()
+                {
+                    Title = "Проверка обновлений",
+                    Content = "Проверка наличия обновлений...",
+                    CloseButtonText = "Отмена"
+                };
+                
+                // Запускаем диалог и проверку обновлений параллельно
+                var dialogTask = dialog.ShowAsync();
+                var updateInfo = await _updateManager.CheckForUpdates();
+                
+                // Закрываем диалог
+                dialog.Hide();
+                
+                if (updateInfo.IsUpdateAvailable)
+                {
+                    var result = MessageBox.Show(
+                        $"Доступна новая версия приложения: {updateInfo.LatestVersion}\n" +
+                        $"Ваша текущая версия: {updateInfo.CurrentVersion}\n\n" +
+                        $"Примечания к выпуску:\n{updateInfo.ReleaseNotes}\n\n" +
+                        "Хотите обновить приложение сейчас?",
+                        "Доступно обновление",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+                    
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        InstallUpdate(updateInfo);
+                    }
+                }
+                else if (!string.IsNullOrEmpty(updateInfo.ErrorMessage))
+                {
+                    MessageBox.Show(
+                        $"Не удалось проверить наличие обновлений: {updateInfo.ErrorMessage}",
+                        "Ошибка проверки обновлений",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        $"У вас установлена последняя версия приложения ({updateInfo.CurrentVersion}).",
+                        "Обновления не найдены",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Произошла ошибка при проверке обновлений: {ex.Message}",
+                    "Ошибка",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+        
         private void HideAllPages()
         {
-            welcomePage.Visibility = Visibility.Collapsed;
-            systemInfoPage.Visibility = Visibility.Collapsed;
-            cleanerPage.Visibility = Visibility.Collapsed;
-            diskAnalyzerPage.Visibility = Visibility.Collapsed;
-            processesPage.Visibility = Visibility.Collapsed;
-            startupPage.Visibility = Visibility.Collapsed;
-            settingsPage.Visibility = Visibility.Collapsed;
-            diskOptimizationPage.Visibility = Visibility.Collapsed;
-            uwpAppsPage.Visibility = Visibility.Collapsed;
-            defenderPage.Visibility = Visibility.Collapsed;
-            updatesPage.Visibility = Visibility.Collapsed;
-            zapretPage.Visibility = Visibility.Collapsed;
+            if (welcomePage != null) welcomePage.Visibility = Visibility.Collapsed;
+            if (systemInfoPage != null) systemInfoPage.Visibility = Visibility.Collapsed;
+            if (cleanerPage != null) cleanerPage.Visibility = Visibility.Collapsed;
+            if (diskAnalyzerPage != null) diskAnalyzerPage.Visibility = Visibility.Collapsed;
+            if (processesPage != null) processesPage.Visibility = Visibility.Collapsed;
+            if (startupPage != null) startupPage.Visibility = Visibility.Collapsed;
+            if (settingsPage != null) settingsPage.Visibility = Visibility.Collapsed;
+            if (diskOptimizationPage != null) diskOptimizationPage.Visibility = Visibility.Collapsed;
+            if (uwpAppsPage != null) uwpAppsPage.Visibility = Visibility.Collapsed;
+            if (defenderPage != null) defenderPage.Visibility = Visibility.Collapsed;
+            if (updatesPage != null) updatesPage.Visibility = Visibility.Collapsed;
+            if (zapretPage != null) zapretPage.Visibility = Visibility.Collapsed;
+            if (enhancedOptimizerPage != null) enhancedOptimizerPage.Visibility = Visibility.Collapsed;
         }
         
         #endregion
@@ -577,6 +850,8 @@ namespace SystemOptimizer
         
         private void UpdateCleanupLevelText()
         {
+            if (sliderCleanupLevel == null || tbCleanupLevel == null) return;
+            
             switch ((int)sliderCleanupLevel.Value)
             {
                 case 1:
@@ -593,9 +868,12 @@ namespace SystemOptimizer
         
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
         {
+            try
+        {
             _settings.RunAtStartup = cbRunAtStartup.IsChecked ?? false;
             _settings.MinimizeToTray = cbMinimizeToTray.IsChecked ?? false;
             _settings.EnableNotifications = cbEnableNotifications.IsChecked ?? false;
+                _settings.CheckUpdatesAtStartup = cbCheckUpdatesAtStartup.IsChecked ?? true;
             
             // Apply run at startup setting
             ApplyRunAtStartup(_settings.RunAtStartup);
@@ -603,7 +881,14 @@ namespace SystemOptimizer
             // Save settings
             _settings.Save();
             
-            MessageBox.Show("Settings saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                Logger.LogInfo("Settings successfully saved");
+                MessageBox.Show("Settings successfully saved.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error saving settings", ex);
+                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         
         private void ApplyRunAtStartup(bool runAtStartup)
@@ -692,7 +977,7 @@ namespace SystemOptimizer
         {
             if (cbOptimizeDrives.SelectedItem == null)
             {
-                MessageBox.Show("Пожалуйста, выберите диск для оптимизации", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Please select a disk for optimization", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             
@@ -706,16 +991,13 @@ namespace SystemOptimizer
                 // Получаем выбранный диск
                 string selectedDrive = cbOptimizeDrives.SelectedItem.ToString()?.Split(' ')[0] ?? "";
                 
-                if (cbCheckDisk.IsChecked == true)
-                {
-                    tbOptimizationResult.Text = "Проверка диска на ошибки...";
-                    await _systemService.CheckDiskHealth(selectedDrive[0].ToString());
-                }
-                
-                var result = await _systemService.OptimizeDisk(
-                    selectedDrive[0].ToString(), 
-                    cbDefragment.IsChecked ?? false, 
-                    cbCleanupDisk.IsChecked ?? false);
+                // Используем улучшенный метод оптимизации
+                var result = await _systemService.AdvancedDiskOptimization(
+                    selectedDrive[0].ToString(),
+                    cbCheckDisk.IsChecked ?? false,
+                    cbDefragment.IsChecked ?? false,
+                    cbCleanupDisk.IsChecked ?? false,
+                    cbTrimSSD.IsChecked ?? false);
                 
                 if (result.Success)
                 {
@@ -764,7 +1046,7 @@ namespace SystemOptimizer
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Не удалось открыть ссылку: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Failed to open the link: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             
@@ -806,51 +1088,73 @@ namespace SystemOptimizer
         
         private void NavigationView_SelectionChanged(object sender, ModernWpf.Controls.NavigationViewSelectionChangedEventArgs e)
         {
-            if (e.SelectedItemContainer != null)
+            var selectedItem = e.SelectedItem as ModernWpf.Controls.NavigationViewItem;
+            if (selectedItem != null)
             {
-                string tag = e.SelectedItemContainer.Tag?.ToString() ?? string.Empty;
+                string tag = selectedItem.Tag?.ToString();
                 
-                HideAllPages();
+                // Останавливаем мониторинг производительности, если он был запущен
+                StopPerformanceMonitoring();
                 
                 switch (tag)
                 {
                     case "welcome":
+                        HideAllPages();
                         welcomePage.Visibility = Visibility.Visible;
                         break;
                     case "systemInfo":
+                        HideAllPages();
                         systemInfoPage.Visibility = Visibility.Visible;
                         LoadSystemInfo();
                         break;
                     case "cleaner":
+                        HideAllPages();
                         cleanerPage.Visibility = Visibility.Visible;
                         break;
                     case "diskAnalyzer":
+                        HideAllPages();
                         diskAnalyzerPage.Visibility = Visibility.Visible;
                         break;
+                    case "diskOptimization":
+                        HideAllPages();
+                        diskOptimizationPage.Visibility = Visibility.Visible;
+                        LoadDrivesForOptimization();
+                        break;
+                    case "enhancedOptimizer":
+                        HideAllPages();
+                        enhancedOptimizerPage.Visibility = Visibility.Visible;
+                        StartPerformanceMonitoring();
+                        break;
                     case "processes":
+                        HideAllPages();
                         processesPage.Visibility = Visibility.Visible;
                         LoadProcesses();
                         break;
                     case "startup":
+                        HideAllPages();
                         startupPage.Visibility = Visibility.Visible;
                         break;
-                    case "diskOptimization":
-                        diskOptimizationPage.Visibility = Visibility.Visible;
-                        LoadDrivesForOptimization();
+                    case "settings":
+                        HideAllPages();
+                        settingsPage.Visibility = Visibility.Visible;
                         break;
                     case "uwpApps":
+                        HideAllPages();
                         uwpAppsPage.Visibility = Visibility.Visible;
                         LoadUwpApps();
                         break;
                     case "defender":
+                        HideAllPages();
                         defenderPage.Visibility = Visibility.Visible;
                         CheckDefenderStatus();
                         break;
                     case "updates":
+                        HideAllPages();
                         updatesPage.Visibility = Visibility.Visible;
                         CheckUpdatesStatus();
                         break;
                     case "zapret":
+                        HideAllPages();
                         zapretPage.Visibility = Visibility.Visible;
                         CheckZapretStatus();
                         break;
@@ -935,20 +1239,20 @@ namespace SystemOptimizer
                         
                         if (success)
                         {
-                            MessageBox.Show("Приложение успешно удалено.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show("Application successfully uninstalled.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                             LoadUwpApps(); // Обновляем список
                         }
                         else
                         {
-                            MessageBox.Show("Не удалось удалить приложение. Убедитесь, что у вас есть необходимые права.", 
-                                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show("Failed to uninstall the application. Make sure you have the necessary permissions.", 
+                                            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         
@@ -1229,14 +1533,24 @@ namespace SystemOptimizer
             
             try
             {
-                bool isInstalled = File.Exists(@"C:\Program Files\Zapret-Discord-YouTube\unins000.exe");
+                // Используем новый подробный статус
+                var status = await _systemService.CheckDetailedZapretStatus();
                 
-                tbZapretStatus.Text = isInstalled ? 
-                    "Zapret-Discord-YouTube установлен." : 
-                    "Zapret-Discord-YouTube не установлен.";
+                tbZapretStatus.Text = status.IsInstalled ? "Установлен" : "Не установлен";
+                tbZapretVersion.Text = status.Version;
+                tbZapretRunning.Text = status.IsRunning ? "Да" : "Нет";
                 
-                btnInstallZapret.IsEnabled = !isInstalled;
-                btnUninstallZapret.IsEnabled = isInstalled;
+                tbDiscordStatus.Text = status.DiscordStatus ? "Включен" : "Отключен";
+                tbYouTubeStatus.Text = status.YouTubeStatus ? "Включен" : "Отключен";
+                
+                toggleDiscord.IsEnabled = status.IsInstalled;
+                toggleDiscord.IsChecked = status.DiscordStatus;
+                
+                toggleYouTube.IsEnabled = status.IsInstalled;
+                toggleYouTube.IsChecked = status.YouTubeStatus;
+                
+                btnInstallZapret.IsEnabled = !status.IsInstalled;
+                btnUninstallZapret.IsEnabled = status.IsInstalled;
             }
             catch (Exception ex)
             {
@@ -1244,6 +1558,89 @@ namespace SystemOptimizer
             }
             finally
             {
+                zapretProgress.IsActive = false;
+                zapretProgress.Visibility = Visibility.Collapsed;
+            }
+        }
+        
+        private async void btnRefreshZapretStatus_Click(object sender, RoutedEventArgs e)
+        {
+            CheckZapretStatus();
+        }
+        
+        private async void toggleDiscord_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                toggleDiscord.IsEnabled = false;
+                zapretProgress.IsActive = true;
+                zapretProgress.Visibility = Visibility.Visible;
+                
+                bool enable = toggleDiscord.IsChecked == true;
+                tbZapretResult.Text = enable ? "Включение обхода блокировки Discord..." : "Отключение обхода блокировки Discord...";
+                
+                bool success = await _systemService.ToggleZapretDiscord(enable);
+                
+                if (success)
+                {
+                    tbZapretResult.Text = enable 
+                        ? "Обход блокировки Discord успешно включен." 
+                        : "Обход блокировки Discord успешно отключен.";
+                    
+                    tbDiscordStatus.Text = enable ? "Включен" : "Отключен";
+                }
+                else
+                {
+                    tbZapretResult.Text = "Не удалось изменить настройки Discord. Убедитесь, что у вас есть права администратора.";
+                    toggleDiscord.IsChecked = !enable; // Возвращаем предыдущее состояние
+                }
+            }
+            catch (Exception ex)
+            {
+                tbZapretResult.Text = $"Ошибка: {ex.Message}";
+            }
+            finally
+            {
+                toggleDiscord.IsEnabled = true;
+                zapretProgress.IsActive = false;
+                zapretProgress.Visibility = Visibility.Collapsed;
+            }
+        }
+        
+        private async void toggleYouTube_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                toggleYouTube.IsEnabled = false;
+                zapretProgress.IsActive = true;
+                zapretProgress.Visibility = Visibility.Visible;
+                
+                bool enable = toggleYouTube.IsChecked == true;
+                tbZapretResult.Text = enable ? "Включение обхода блокировки YouTube..." : "Отключение обхода блокировки YouTube...";
+                
+                bool success = await _systemService.ToggleZapretYouTube(enable);
+                
+                if (success)
+                {
+                    tbZapretResult.Text = enable 
+                        ? "Обход блокировки YouTube успешно включен." 
+                        : "Обход блокировки YouTube успешно отключен.";
+                    
+                    tbYouTubeStatus.Text = enable ? "Включен" : "Отключен";
+                }
+                else
+                {
+                    tbZapretResult.Text = "Не удалось изменить настройки YouTube. Убедитесь, что у вас есть права администратора.";
+                    toggleYouTube.IsChecked = !enable; // Возвращаем предыдущее состояние
+                }
+            }
+            catch (Exception ex)
+            {
+                tbZapretResult.Text = $"Ошибка: {ex.Message}";
+            }
+            finally
+            {
+                toggleYouTube.IsEnabled = true;
                 zapretProgress.IsActive = false;
                 zapretProgress.Visibility = Visibility.Collapsed;
             }
@@ -1259,9 +1656,18 @@ namespace SystemOptimizer
                 zapretProgress.Visibility = Visibility.Visible;
                 tbZapretResult.Text = "Установка Zapret-Discord-YouTube...";
                 
-                // Здесь будет код загрузки и установки программы
-                tbZapretResult.Text = "Функция будет реализована в следующей версии.";
-                CheckZapretStatus();
+                bool success = await _systemService.InstallZapretDiscordYoutube();
+                
+                if (success)
+                {
+                    tbZapretResult.Text = "Zapret-Discord-YouTube успешно установлен.";
+                    CheckZapretStatus();
+                }
+                else
+                {
+                    tbZapretResult.Text = "Не удалось установить Zapret-Discord-YouTube. Убедитесь, что у вас есть права администратора и подключение к Интернету.";
+                    CheckZapretStatus();
+                }
             }
             catch (Exception ex)
             {
@@ -1284,9 +1690,18 @@ namespace SystemOptimizer
                 zapretProgress.Visibility = Visibility.Visible;
                 tbZapretResult.Text = "Удаление Zapret-Discord-YouTube...";
                 
-                // Здесь будет код удаления программы
-                tbZapretResult.Text = "Функция будет реализована в следующей версии.";
-                CheckZapretStatus();
+                bool success = await _systemService.UninstallZapretDiscordYoutube();
+                
+                if (success)
+                {
+                    tbZapretResult.Text = "Zapret-Discord-YouTube успешно удален.";
+                    CheckZapretStatus();
+                }
+                else
+                {
+                    tbZapretResult.Text = "Не удалось удалить Zapret-Discord-YouTube. Убедитесь, что у вас есть права администратора.";
+                    CheckZapretStatus();
+                }
             }
             catch (Exception ex)
             {
@@ -1296,6 +1711,305 @@ namespace SystemOptimizer
             {
                 zapretProgress.IsActive = false;
                 zapretProgress.Visibility = Visibility.Collapsed;
+            }
+        }
+        
+        #endregion
+        
+        #region Enhanced System Optimizer
+        
+        private SystemPerformanceInfo _performanceInfo;
+        private DispatcherTimer _performanceTimer;
+        
+        private void InitializePerformanceMonitoring()
+        {
+            _performanceInfo = new SystemPerformanceInfo();
+            
+            // Проверяем, что коллекции инициализированы правильно
+            if (_performanceInfo.CpuHistory == null)
+                _performanceInfo.CpuHistory = new ObservableCollection<PerformancePoint>();
+            
+            if (_performanceInfo.MemoryHistory == null)
+                _performanceInfo.MemoryHistory = new ObservableCollection<PerformancePoint>();
+            
+            if (_performanceInfo.DiskHistory == null)
+                _performanceInfo.DiskHistory = new ObservableCollection<PerformancePoint>();
+            
+            _performanceTimer = new DispatcherTimer();
+            _performanceTimer.Interval = TimeSpan.FromSeconds(1);
+            _performanceTimer.Tick += PerformanceTimer_Tick;
+        }
+        
+        private async void PerformanceTimer_Tick(object sender, EventArgs e)
+        {
+            await RefreshPerformanceData();
+        }
+        
+        private async Task RefreshPerformanceData()
+        {
+            try
+            {
+                var info = await _systemService.GetSystemPerformance();
+                
+                // Проверка на null для элементов интерфейса
+                if (tbCpuUsage == null || tbMemoryUsagePercent == null || tbDiskUsage == null)
+                    return;
+                
+                // Обновляем текстовые поля
+                tbCpuUsage.Text = $"{info.CpuUsage:F1}%";
+                tbMemoryUsagePercent.Text = $"{info.MemoryUsage:F1}%";
+                tbDiskUsage.Text = $"{info.DiskUsage:F1}%";
+                
+                // Обновляем график
+                DrawPerformanceGraph(info);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка при обновлении данных производительности: {ex.Message}");
+            }
+        }
+        
+        private void DrawPerformanceGraph(SystemPerformanceInfo info)
+        {
+            if (info == null || performanceGraph == null) return;
+            
+            // Очищаем холст
+            performanceGraph.Children.Clear();
+            
+            // Если коллекции не инициализированы или нет данных, выходим
+            if (info.CpuHistory == null || info.MemoryHistory == null || 
+                info.DiskHistory == null || info.CpuHistory.Count == 0) 
+            {
+                return;
+            }
+            
+            // Получаем размеры холста
+            double width = performanceGraph.ActualWidth;
+            double height = performanceGraph.ActualHeight;
+            
+            // Рисуем сетку
+            DrawGridLines(width, height);
+            
+            // Рисуем графики
+            if (info.CpuHistory.Count > 0)
+                DrawLine(info.CpuHistory, width, height, Colors.Red);
+            
+            if (info.MemoryHistory.Count > 0)
+                DrawLine(info.MemoryHistory, width, height, Colors.Blue);
+            
+            if (info.DiskHistory.Count > 0)
+                DrawLine(info.DiskHistory, width, height, Colors.Green);
+            
+            // Добавляем легенду
+            DrawLegend(width, height);
+        }
+        
+        private void DrawGridLines(double width, double height)
+        {
+            // Горизонтальные линии
+            for (int i = 0; i <= 10; i++)
+            {
+                Line line = new Line();
+                line.X1 = 0;
+                line.X2 = width;
+                line.Y1 = line.Y2 = i * (height / 10);
+                line.Stroke = new SolidColorBrush(Colors.Gray);
+                line.StrokeThickness = i % 5 == 0 ? 0.5 : 0.25;
+                line.Opacity = 0.5;
+                performanceGraph.Children.Add(line);
+                
+                // Добавляем метки для основных линий
+                if (i % 5 == 0)
+                {
+                    TextBlock text = new TextBlock();
+                    text.Text = $"{100 - i * 10}%";
+                    text.FontSize = 10;
+                    text.Foreground = new SolidColorBrush(Colors.Gray);
+                    Canvas.SetLeft(text, 5);
+                    Canvas.SetTop(text, i * (height / 10) - 10);
+                    performanceGraph.Children.Add(text);
+                }
+            }
+            
+            // Вертикальные линии
+            for (int i = 0; i <= 6; i++)
+            {
+                Line line = new Line();
+                line.X1 = line.X2 = i * (width / 6);
+                line.Y1 = 0;
+                line.Y2 = height;
+                line.Stroke = new SolidColorBrush(Colors.Gray);
+                line.StrokeThickness = 0.25;
+                line.Opacity = 0.5;
+                performanceGraph.Children.Add(line);
+            }
+        }
+        
+        private void DrawLine(ObservableCollection<PerformancePoint> points, double width, double height, Color color)
+        {
+            if (points == null || points.Count < 2 || performanceGraph == null) return;
+            
+            Polyline polyline = new Polyline();
+            polyline.Stroke = new SolidColorBrush(color);
+            polyline.StrokeThickness = 2;
+            
+            int count = points.Count;
+            double xStep = width / Math.Min(60, Math.Max(1, count - 1));
+            
+            for (int i = 0; i < count; i++)
+            {
+                if (points[i] == null) continue;
+                
+                double x = i * xStep;
+                double y = height - (points[i].Value / 100 * height);
+                polyline.Points.Add(new Point(x, y));
+            }
+            
+            performanceGraph.Children.Add(polyline);
+        }
+        
+        private void DrawLegend(double width, double height)
+        {
+            Canvas legend = new Canvas();
+            Canvas.SetLeft(legend, width - 100);
+            Canvas.SetTop(legend, 10);
+            legend.Width = 90;
+            legend.Height = 80;
+            legend.Background = new SolidColorBrush(Color.FromArgb(128, 240, 240, 240));
+            
+            // CPU
+            Ellipse cpuDot = new Ellipse();
+            cpuDot.Width = cpuDot.Height = 8;
+            cpuDot.Fill = new SolidColorBrush(Colors.Red);
+            Canvas.SetLeft(cpuDot, 5);
+            Canvas.SetTop(cpuDot, 10);
+            legend.Children.Add(cpuDot);
+            
+            TextBlock cpuText = new TextBlock();
+            cpuText.Text = "CPU";
+            cpuText.Foreground = new SolidColorBrush(Colors.Black);
+            Canvas.SetLeft(cpuText, 20);
+            Canvas.SetTop(cpuText, 7);
+            legend.Children.Add(cpuText);
+            
+            // Memory
+            Ellipse memDot = new Ellipse();
+            memDot.Width = memDot.Height = 8;
+            memDot.Fill = new SolidColorBrush(Colors.Blue);
+            Canvas.SetLeft(memDot, 5);
+            Canvas.SetTop(memDot, 30);
+            legend.Children.Add(memDot);
+            
+            TextBlock memText = new TextBlock();
+            memText.Text = "Memory";
+            memText.Foreground = new SolidColorBrush(Colors.Black);
+            Canvas.SetLeft(memText, 20);
+            Canvas.SetTop(memText, 27);
+            legend.Children.Add(memText);
+            
+            // Disk
+            Ellipse diskDot = new Ellipse();
+            diskDot.Width = diskDot.Height = 8;
+            diskDot.Fill = new SolidColorBrush(Colors.Green);
+            Canvas.SetLeft(diskDot, 5);
+            Canvas.SetTop(diskDot, 50);
+            legend.Children.Add(diskDot);
+            
+            TextBlock diskText = new TextBlock();
+            diskText.Text = "Disk";
+            diskText.Foreground = new SolidColorBrush(Colors.Black);
+            Canvas.SetLeft(diskText, 20);
+            Canvas.SetTop(diskText, 47);
+            legend.Children.Add(diskText);
+            
+            performanceGraph.Children.Add(legend);
+        }
+        
+        private async void btnRefreshPerformance_Click(object sender, RoutedEventArgs e)
+        {
+            await RefreshPerformanceData();
+        }
+        
+        private async void StartPerformanceMonitoring()
+        {
+            if (_performanceTimer == null)
+            {
+                InitializePerformanceMonitoring();
+            }
+            
+            _performanceTimer.Start();
+            await RefreshPerformanceData();
+        }
+        
+        private void StopPerformanceMonitoring()
+        {
+            if (_performanceTimer != null)
+            {
+                _performanceTimer.Stop();
+            }
+        }
+        
+        private async void btnStartEnhancedOptimization_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                btnStartEnhancedOptimization.IsEnabled = false;
+                enhancedOptimizerProgress.IsActive = true;
+                enhancedOptimizerProgress.Visibility = Visibility.Visible;
+                tbEnhancedOptimizerResult.Text = "Выполняется оптимизация системы...";
+                
+                // Определяем уровень оптимизации
+                int optimizationLevel = 1; // Light
+                if (rbMediumOptimization.IsChecked == true) optimizationLevel = 2; // Medium
+                if (rbAggresiveOptimization.IsChecked == true) optimizationLevel = 3; // Aggressive
+                
+                // Запускаем оптимизацию
+                var result = await _systemService.OptimizeSystem(
+                    cbOptimizePerformance.IsChecked ?? false,
+                    cbOptimizeDisk.IsChecked ?? false,
+                    cbOptimizeMemory.IsChecked ?? false,
+                    cbOptimizeStartup.IsChecked ?? false,
+                    cbOptimizeBrowser.IsChecked ?? false,
+                    cbOptimizeNetwork.IsChecked ?? false,
+                    optimizationLevel
+                );
+                
+                if (result.Success)
+                {
+                    string message = "Оптимизация завершена успешно!";
+                    
+                    if (result.SpaceFreed > 0)
+                    {
+                        message += $" Освобождено {result.FormattedSpaceFreed} дискового пространства.";
+                    }
+                    
+                    tbEnhancedOptimizerResult.Text = message;
+                    
+                    // Отображаем список примененных оптимизаций
+                    if (result.OptimizationsApplied.Count > 0)
+                    {
+                        lvOptimizationActions.Items.Clear();
+                        foreach (var optimization in result.OptimizationsApplied)
+                        {
+                            lvOptimizationActions.Items.Add(optimization);
+                        }
+                        lvOptimizationActions.Visibility = Visibility.Visible;
+                    }
+                }
+                else
+                {
+                    tbEnhancedOptimizerResult.Text = $"Во время оптимизации произошла ошибка: {result.ErrorMessage}";
+                }
+            }
+            catch (Exception ex)
+            {
+                tbEnhancedOptimizerResult.Text = $"Ошибка: {ex.Message}";
+            }
+            finally
+            {
+                btnStartEnhancedOptimization.IsEnabled = true;
+                enhancedOptimizerProgress.IsActive = false;
+                enhancedOptimizerProgress.Visibility = Visibility.Collapsed;
             }
         }
         

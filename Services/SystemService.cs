@@ -12,6 +12,9 @@ using System.Text;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace SystemOptimizer.Services
 {
@@ -1529,6 +1532,867 @@ namespace SystemOptimizer.Services
                 return false;
             }
         }
+
+        // Новые методы для улучшенного оптимизатора
+        
+        // Класс для хранения результатов системной оптимизации
+        public class SystemOptimizationResult
+        {
+            public bool Success { get; set; }
+            public long SpaceFreed { get; set; }
+            public List<string> OptimizationsApplied { get; set; } = new List<string>();
+            public string ErrorMessage { get; set; } = string.Empty;
+            
+            public string FormattedSpaceFreed
+            {
+                get
+                {
+                    if (SpaceFreed < 1024)
+                        return $"{SpaceFreed} B";
+                    else if (SpaceFreed < 1024 * 1024)
+                        return $"{SpaceFreed / 1024.0:F2} KB";
+                    else if (SpaceFreed < 1024 * 1024 * 1024)
+                        return $"{SpaceFreed / 1024.0 / 1024.0:F2} MB";
+                    else
+                        return $"{SpaceFreed / 1024.0 / 1024.0 / 1024.0:F2} GB";
+                }
+            }
+        }
+        
+        // Метод для оптимизации системы на основе различных параметров
+        public async Task<SystemOptimizationResult> OptimizeSystem(
+            bool optimizePerformance,
+            bool optimizeDisk,
+            bool optimizeMemory,
+            bool optimizeStartup,
+            bool optimizeBrowser,
+            bool optimizeNetwork,
+            int optimizationLevel)
+        {
+            var result = new SystemOptimizationResult();
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Оптимизация производительности
+                    if (optimizePerformance)
+                    {
+                        if (DisableVisualEffects())
+                        {
+                            result.OptimizationsApplied.Add("Отключены визуальные эффекты Windows");
+                        }
+                        
+                        if (optimizationLevel >= 2 && DisableUnneededServices())
+                        {
+                            result.OptimizationsApplied.Add("Отключены ненужные службы");
+                        }
+                        
+                        if (optimizationLevel >= 3 && TuneProcessorScheduling())
+                        {
+                            result.OptimizationsApplied.Add("Оптимизирована планировка процессора");
+                        }
+                    }
+                    
+                    // Оптимизация диска
+                    if (optimizeDisk)
+                    {
+                        // Очистка системных файлов
+                        var cleanupResult = CleanTemporaryFiles(true, true, true, true, true, optimizationLevel);
+                        if (cleanupResult.Result.Success)
+                        {
+                            result.SpaceFreed += cleanupResult.Result.BytesFreed;
+                            result.OptimizationsApplied.Add($"Очищено {cleanupResult.Result.FormattedBytesFreed} временных файлов");
+                        }
+                        
+                        if (optimizationLevel >= 2)
+                        {
+                            // Дополнительная оптимизация диска
+                            if (DisableSuperFetch())
+                            {
+                                result.OptimizationsApplied.Add("Отключен SuperFetch для повышения производительности SSD");
+                            }
+                            
+                            if (optimizationLevel >= 3 && DisableWindowsIndexing())
+                            {
+                                result.OptimizationsApplied.Add("Отключена индексация Windows для повышения производительности");
+                            }
+                        }
+                        
+                        // Отключение гибернации для экономии места на диске
+                        if (optimizationLevel >= 3 && DisableHibernation())
+                        {
+                            result.OptimizationsApplied.Add("Отключена гибернация для экономии места на диске");
+                        }
+                    }
+                    
+                    // Оптимизация памяти
+                    if (optimizeMemory)
+                    {
+                        if (optimizeVirtualMemory(optimizationLevel))
+                        {
+                            result.OptimizationsApplied.Add("Оптимизирована виртуальная память");
+                        }
+                        
+                        if (optimizationLevel >= 2 && SetClearPageFileAtShutdown())
+                        {
+                            result.OptimizationsApplied.Add("Настроена очистка файла подкачки при выключении");
+                        }
+                    }
+                    
+                    // Оптимизация автозагрузки
+                    if (optimizeStartup)
+                    {
+                        if (OptimizeStartup().Result)
+                        {
+                            result.OptimizationsApplied.Add("Оптимизированы программы автозагрузки");
+                        }
+                    }
+                    
+                    // Оптимизация браузера
+                    if (optimizeBrowser)
+                    {
+                        if (OptimizeBrowsers())
+                        {
+                            result.OptimizationsApplied.Add("Оптимизированы настройки браузеров");
+                        }
+                    }
+                    
+                    // Оптимизация сети
+                    if (optimizeNetwork)
+                    {
+                        if (OptimizeNetworkSettings())
+                        {
+                            result.OptimizationsApplied.Add("Оптимизированы настройки сети");
+                        }
+                        
+                        if (optimizationLevel >= 2 && SetDNS())
+                        {
+                            result.OptimizationsApplied.Add("Установлены оптимальные DNS-серверы");
+                        }
+                    }
+                    
+                    result.Success = true;
+                }
+                catch (Exception ex)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = ex.Message;
+                }
+            });
+            
+            return result;
+        }
+        
+        // Метод для получения данных о производительности системы в реальном времени
+        public async Task<SystemPerformanceInfo> GetSystemPerformance()
+        {
+            var info = new SystemPerformanceInfo();
+            
+            // Создаем коллекции для истории, если они не были инициализированы в конструкторе
+            info.CpuHistory = info.CpuHistory ?? new ObservableCollection<PerformancePoint>();
+            info.MemoryHistory = info.MemoryHistory ?? new ObservableCollection<PerformancePoint>();
+            info.DiskHistory = info.DiskHistory ?? new ObservableCollection<PerformancePoint>();
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Получение загрузки CPU
+                    try 
+                    {
+                        using (var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total"))
+                        {
+                            cpuCounter.NextValue(); // Первое измерение всегда дает 0
+                            Thread.Sleep(100); // Ждем немного для получения актуальных данных
+                            info.CpuUsage = cpuCounter.NextValue();
+                        }
+                    }
+                    catch (Exception cpuEx)
+                    {
+                        Debug.WriteLine($"Ошибка при получении загрузки CPU: {cpuEx.Message}");
+                        info.CpuUsage = 0;
+                    }
+                    
+                    // Получение загрузки памяти
+                    try
+                    {
+                        using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem"))
+                        {
+                            foreach (var os in searcher.Get())
+                            {
+                                if (os["TotalVisibleMemorySize"] != null && os["FreePhysicalMemory"] != null)
+                                {
+                                    double totalMemory = Convert.ToDouble(os["TotalVisibleMemorySize"]);
+                                    double freeMemory = Convert.ToDouble(os["FreePhysicalMemory"]);
+                                    
+                                    if (totalMemory > 0)
+                                    {
+                                        info.MemoryUsage = Math.Round((totalMemory - freeMemory) / totalMemory * 100, 2);
+                                    }
+                                    else
+                                    {
+                                        info.MemoryUsage = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    info.MemoryUsage = 0;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception memEx)
+                    {
+                        Debug.WriteLine($"Ошибка при получении загрузки памяти: {memEx.Message}");
+                        info.MemoryUsage = 0;
+                    }
+                    
+                    // Получение загрузки диска
+                    try
+                    {
+                        using (var diskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total"))
+                        {
+                            diskCounter.NextValue(); // Первое измерение всегда дает 0
+                            Thread.Sleep(100); // Ждем немного для получения актуальных данных
+                            info.DiskUsage = diskCounter.NextValue();
+                        }
+                    }
+                    catch (Exception diskEx)
+                    {
+                        Debug.WriteLine($"Ошибка при получении загрузки диска: {diskEx.Message}");
+                        info.DiskUsage = 0;
+                    }
+                    
+                    // Добавляем точку в историю
+                    var now = DateTime.Now;
+                    
+                    // Используем Dispatcher.Invoke для безопасного доступа к ObservableCollection
+                    Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        info.CpuHistory.Add(new PerformancePoint(now, info.CpuUsage));
+                        info.MemoryHistory.Add(new PerformancePoint(now, info.MemoryUsage));
+                        info.DiskHistory.Add(new PerformancePoint(now, info.DiskUsage));
+                        
+                        // Оставляем только последние 60 точек (для графика за минуту)
+                        if (info.CpuHistory.Count > 60)
+                        {
+                            info.CpuHistory.RemoveAt(0);
+                        }
+                        if (info.MemoryHistory.Count > 60)
+                        {
+                            info.MemoryHistory.RemoveAt(0);
+                        }
+                        if (info.DiskHistory.Count > 60)
+                        {
+                            info.DiskHistory.RemoveAt(0);
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Обработка ошибок при получении данных
+                    Debug.WriteLine($"Ошибка при получении данных о производительности: {ex.Message}");
+                }
+            });
+            
+            return info;
+        }
+        
+        // Улучшенный метод для оптимизации дисков с продвинутой диагностикой
+        public async Task<DiskOptimizationResult> AdvancedDiskOptimization(string driveLetter, bool checkHealth, bool defragment, bool optimize, bool trim)
+        {
+            var result = new DiskOptimizationResult
+            {
+                Success = false,
+                CleanupSpaceFreed = 0,
+                DefragmentSuccess = false
+            };
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Проверка здоровья диска
+                    if (checkHealth)
+                    {
+                        RunProcess("chkdsk", $"{driveLetter}: /scan");
+                    }
+                    
+                    // Выполнение очистки диска
+                    if (optimize)
+                    {
+                        result.CleanupSpaceFreed = RunAdvancedDiskCleanup(driveLetter);
+                    }
+                    
+                    // Дефрагментация диска (для HDD)
+                    if (defragment)
+                    {
+                        result.DefragmentSuccess = RunDefragmentation(driveLetter);
+                    }
+                    
+                    // TRIM для SSD
+                    if (trim && IsSSDDrive(driveLetter))
+                    {
+                        RunProcess("fsutil", $"behavior set DisableDeleteNotify 0");
+                        result.DefragmentSuccess = RunTrimOperation(driveLetter);
+                    }
+                    
+                    result.Success = true;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Ошибка при оптимизации диска: {ex.Message}");
+                    result.Success = false;
+                }
+            });
+            
+            return result;
+        }
+        
+        // Проверка, является ли диск SSD
+        private bool IsSSDDrive(string driveLetter)
+        {
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_DiskDrive"))
+                {
+                    foreach (var drive in searcher.Get())
+                    {
+                        string mediaType = drive["MediaType"]?.ToString() ?? string.Empty;
+                        if (mediaType.IndexOf("SSD", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        // Выполнение TRIM для SSD
+        private bool RunTrimOperation(string driveLetter)
+        {
+            try
+            {
+                var process = new Process();
+                process.StartInfo.FileName = "defrag";
+                process.StartInfo.Arguments = $"{driveLetter}: /L /H"; // /L для анализа, /H для высокого приоритета
+                process.StartInfo.Verb = "runas";
+                process.StartInfo.UseShellExecute = true;
+                
+                process.Start();
+                process.WaitForExit();
+                
+                return process.ExitCode == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        // Усовершенствованная очистка диска
+        private long RunAdvancedDiskCleanup(string driveLetter)
+        {
+            // Получаем размер диска до очистки
+            var driveInfo = new DriveInfo(driveLetter);
+            long freeSpaceBefore = driveInfo.AvailableFreeSpace;
+            
+            try
+            {
+                // Запускаем стандартную очистку
+                RunDiskCleanup(driveLetter);
+                
+                // Очистка папки WindowsApps (кэш приложений из Microsoft Store)
+                string windowsAppsCache = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Microsoft\\WindowsApps\\.cache");
+                CleanDirectory(windowsAppsCache);
+                
+                // Очистка журналов Windows Update
+                string updateLogs = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "Logs\\WindowsUpdate");
+                CleanDirectory(updateLogs);
+                
+                // Очистка кэша DNS
+                RunProcess("ipconfig", "/flushdns");
+                
+                // Очистка кэша пиктограмм
+                string iconCache = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "IconCache.db");
+                if (File.Exists(iconCache))
+                {
+                    try { File.Delete(iconCache); } catch { }
+                }
+                
+                // Очистка кэша обновлений .NET Framework
+                string dotNetCache = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    "Microsoft.NET\\Framework\\v4.0.30319\\Temporary ASP.NET Files");
+                CleanDirectory(dotNetCache);
+                
+                // Получаем размер диска после очистки
+                driveInfo = new DriveInfo(driveLetter);
+                long freeSpaceAfter = driveInfo.AvailableFreeSpace;
+                
+                return freeSpaceAfter - freeSpaceBefore;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+        
+        // Методы для оптимизации системы
+        
+        private bool DisableVisualEffects()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("VisualFXSetting", 2); // 2 - настроить для лучшей производительности
+                    }
+                }
+                
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("UserPreferencesMask", new byte[] { 0x90, 0x12, 0x01, 0x80, 0x10, 0x00, 0x00, 0x00 });
+                    }
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool DisableUnneededServices()
+        {
+            try
+            {
+                // Список служб, которые можно отключить для повышения производительности
+                string[] services = {
+                    "DiagTrack",         // Служба телеметрии Connected User Experiences and Telemetry
+                    "dmwappushservice",  // Служба WAP Push
+                    "SysMain",           // SuperFetch
+                    "WSearch"            // Windows Search
+                };
+                
+                foreach (var service in services)
+                {
+                    RunProcess("sc", $"config {service} start= disabled");
+                    RunProcess("net", $"stop {service}");
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool TuneProcessorScheduling()
+        {
+            try
+            {
+                using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\PriorityControl", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("Win32PrioritySeparation", 38, RegistryValueKind.DWord); // Оптимизация для приложений
+                    }
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool DisableSuperFetch()
+        {
+            try
+            {
+                RunProcess("sc", "config SysMain start= disabled");
+                RunProcess("net", "stop SysMain");
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool DisableWindowsIndexing()
+        {
+            try
+            {
+                RunProcess("sc", "config WSearch start= disabled");
+                RunProcess("net", "stop WSearch");
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool DisableHibernation()
+        {
+            try
+            {
+                RunProcess("powercfg", "-h off");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool optimizeVirtualMemory(int level)
+        {
+            try
+            {
+                // Предполагаем, что диск C: это системный диск
+                string systemDrive = Path.GetPathRoot(Environment.SystemDirectory);
+                if (string.IsNullOrEmpty(systemDrive))
+                {
+                    systemDrive = "C:";
+                }
+                
+                // Получаем информацию о системной памяти
+                long ramSize = 0;
+                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_ComputerSystem"))
+                {
+                    foreach (var system in searcher.Get())
+                    {
+                        ramSize = Convert.ToInt64(system["TotalPhysicalMemory"]) / (1024 * 1024); // Размер в МБ
+                    }
+                }
+                
+                // Расчет оптимального размера файла подкачки в зависимости от объема RAM
+                int minSize = (int)(ramSize * 0.5); // 50% от размера RAM
+                int maxSize = (int)(ramSize * 1.5); // 150% от размера RAM
+                
+                // Более агрессивная оптимизация для более высоких уровней
+                if (level >= 2)
+                {
+                    minSize = (int)(ramSize * 0.75);
+                    maxSize = (int)(ramSize * 1.75);
+                }
+                
+                if (level >= 3)
+                {
+                    minSize = (int)(ramSize * 1.0);
+                    maxSize = (int)(ramSize * 2.0);
+                }
+                
+                // Применяем настройки с помощью командной строки
+                RunProcess("wmic", $@"computersystem where name=""{Environment.MachineName}"" set AutomaticManagedPagefile=False");
+                RunProcess("wmic", $@"pagefileset where name=""{systemDrive}\\pagefile.sys"" set InitialSize={minSize},MaximumSize={maxSize}");
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool SetClearPageFileAtShutdown()
+        {
+            try
+            {
+                using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("ClearPageFileAtShutdown", 1, RegistryValueKind.DWord);
+                    }
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool OptimizeBrowsers()
+        {
+            try
+            {
+                // Очистка кэша браузеров
+                string chromeCache = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Google\\Chrome\\User Data\\Default\\Cache");
+                CleanDirectory(chromeCache);
+                
+                string firefoxProfile = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Mozilla\\Firefox\\Profiles");
+                
+                if (Directory.Exists(firefoxProfile))
+                {
+                    foreach (var profile in Directory.GetDirectories(firefoxProfile))
+                    {
+                        CleanDirectory(Path.Combine(profile, "cache2"));
+                    }
+                }
+                
+                string edgeCache = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Microsoft\\Edge\\User Data\\Default\\Cache");
+                CleanDirectory(edgeCache);
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool OptimizeNetworkSettings()
+        {
+            try
+            {
+                // Оптимизация TCP/IP соединений
+                RunProcess("netsh", "int tcp set global autotuninglevel=normal");
+                RunProcess("netsh", "int tcp set global chimney=enabled");
+                RunProcess("netsh", "int tcp set global ecncapability=enabled");
+                
+                // Увеличение числа одновременных подключений
+                using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("MaxUserPort", 65534, RegistryValueKind.DWord);
+                        key.SetValue("TcpTimedWaitDelay", 30, RegistryValueKind.DWord);
+                    }
+                }
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private bool SetDNS()
+        {
+            try
+            {
+                // Использование более быстрых DNS-серверов (Google DNS)
+                RunProcess("netsh", "interface ip set dns name=\"Ethernet\" static 8.8.8.8 primary");
+                RunProcess("netsh", "interface ip add dns name=\"Ethernet\" 8.8.4.4 index=2");
+                
+                RunProcess("netsh", "interface ip set dns name=\"Wi-Fi\" static 8.8.8.8 primary");
+                RunProcess("netsh", "interface ip add dns name=\"Wi-Fi\" 8.8.4.4 index=2");
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        // Улучшенная интеграция с Zapret-Discord-YouTube
+        public async Task<ZapretStatus> CheckDetailedZapretStatus()
+        {
+            var status = new ZapretStatus
+            {
+                IsInstalled = false,
+                IsRunning = false,
+                DiscordStatus = false,
+                YouTubeStatus = false,
+                Version = "Не установлен"
+            };
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    string installPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                        "zapret-discord-youtube");
+                    
+                    // Проверка установки
+                    if (Directory.Exists(installPath))
+                    {
+                        status.IsInstalled = true;
+                        
+                        // Проверка версии
+                        string versionFile = Path.Combine(installPath, "version.txt");
+                        if (File.Exists(versionFile))
+                        {
+                            status.Version = File.ReadAllText(versionFile).Trim();
+                        }
+                        
+                        // Проверка запущенных процессов
+                        status.IsRunning = Process.GetProcessesByName("zapret-discord-youtube").Length > 0;
+                        
+                        // Проверка статуса Discord
+                        status.DiscordStatus = File.Exists(Path.Combine(installPath, "discord.enabled"));
+                        
+                        // Проверка статуса YouTube
+                        status.YouTubeStatus = File.Exists(Path.Combine(installPath, "youtube.enabled"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Ошибка при проверке статуса Zapret: {ex.Message}");
+                }
+            });
+            
+            return status;
+        }
+        
+        // Включить/отключить обход блокировки Discord
+        public async Task<bool> ToggleZapretDiscord(bool enable)
+        {
+            bool success = false;
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    string installPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                        "zapret-discord-youtube");
+                    
+                    if (Directory.Exists(installPath))
+                    {
+                        string controlFile = Path.Combine(installPath, "discord.enabled");
+                        
+                        if (enable)
+                        {
+                            // Создаем файл-флаг
+                            File.WriteAllText(controlFile, DateTime.Now.ToString());
+                            
+                            // Запускаем скрипт запуска обхода для Discord
+                            var process = new Process();
+                            process.StartInfo.FileName = Path.Combine(installPath, "enable-discord.bat");
+                            process.StartInfo.UseShellExecute = true;
+                            process.StartInfo.Verb = "runas";
+                            process.Start();
+                            process.WaitForExit();
+                            
+                            success = process.ExitCode == 0;
+                        }
+                        else
+                        {
+                            // Удаляем файл-флаг если он существует
+                            if (File.Exists(controlFile))
+                            {
+                                File.Delete(controlFile);
+                            }
+                            
+                            // Запускаем скрипт отключения обхода для Discord
+                            var process = new Process();
+                            process.StartInfo.FileName = Path.Combine(installPath, "disable-discord.bat");
+                            process.StartInfo.UseShellExecute = true;
+                            process.StartInfo.Verb = "runas";
+                            process.Start();
+                            process.WaitForExit();
+                            
+                            success = process.ExitCode == 0;
+                        }
+                    }
+                }
+                catch
+                {
+                    success = false;
+                }
+            });
+            
+            return success;
+        }
+        
+        // Включить/отключить обход блокировки YouTube
+        public async Task<bool> ToggleZapretYouTube(bool enable)
+        {
+            bool success = false;
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    string installPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                        "zapret-discord-youtube");
+                    
+                    if (Directory.Exists(installPath))
+                    {
+                        string controlFile = Path.Combine(installPath, "youtube.enabled");
+                        
+                        if (enable)
+                        {
+                            // Создаем файл-флаг
+                            File.WriteAllText(controlFile, DateTime.Now.ToString());
+                            
+                            // Запускаем скрипт запуска обхода для YouTube
+                            var process = new Process();
+                            process.StartInfo.FileName = Path.Combine(installPath, "enable-youtube.bat");
+                            process.StartInfo.UseShellExecute = true;
+                            process.StartInfo.Verb = "runas";
+                            process.Start();
+                            process.WaitForExit();
+                            
+                            success = process.ExitCode == 0;
+                        }
+                        else
+                        {
+                            // Удаляем файл-флаг если он существует
+                            if (File.Exists(controlFile))
+                            {
+                                File.Delete(controlFile);
+                            }
+                            
+                            // Запускаем скрипт отключения обхода для YouTube
+                            var process = new Process();
+                            process.StartInfo.FileName = Path.Combine(installPath, "disable-youtube.bat");
+                            process.StartInfo.UseShellExecute = true;
+                            process.StartInfo.Verb = "runas";
+                            process.Start();
+                            process.WaitForExit();
+                            
+                            success = process.ExitCode == 0;
+                        }
+                    }
+                }
+                catch
+                {
+                    success = false;
+                }
+            });
+            
+            return success;
+        }
     }
     
     public class ProcessInfo
@@ -1581,7 +2445,17 @@ namespace SystemOptimizer.Services
                     return $"{CleanupSpaceFreed / 1024.0 / 1024.0:F2} MB";
                 else
                     return $"{CleanupSpaceFreed / 1024.0 / 1024.0 / 1024.0:F2} GB";
-            }
+                }
         }
+    }
+
+    // Новый класс для статуса Zapret-Discord-YouTube
+    public class ZapretStatus
+    {
+        public bool IsInstalled { get; set; }
+        public bool IsRunning { get; set; }
+        public bool DiscordStatus { get; set; }
+        public bool YouTubeStatus { get; set; }
+        public string Version { get; set; }
     }
 } 

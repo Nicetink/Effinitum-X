@@ -1,0 +1,39 @@
+<Window x:Class="SystemOptimizer.SplashScreen"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SystemOptimizer"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        mc:Ignorable="d"
+        Title="Effinitum X" Height="400" Width="600"
+        WindowStyle="None" ResizeMode="NoResize" 
+        WindowStartupLocation="CenterScreen" 
+        Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+    
+    <Border CornerRadius="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" 
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Row="0">
+                <Image Source="Resources/logo.png" Width="150" Height="150" Margin="0,0,0,20"/>
+                <TextBlock Text="Effinitum X" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBlock Text="version 1.6.0" FontSize="16" Opacity="0.7" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Row="1" Margin="20,0,20,20">
+                <ProgressBar x:Name="pbProgress" Height="10" Maximum="100" Value="0" Margin="0,0,0,10"/>
+                <TextBlock x:Name="tbStatus" Text="Loading system..." FontSize="14" HorizontalAlignment="Center"/>
+            </StackPanel>
+            
+            <TextBlock Grid.Row="2" Text="© 2023-2025 Nicet ink" FontSize="10" Opacity="0.5" 
+                       HorizontalAlignment="Center" Margin="0,0,0,15"/>
+        </Grid>
+    </Border>
+</Window> 

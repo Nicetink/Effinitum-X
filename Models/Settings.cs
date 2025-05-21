@@ -11,6 +11,7 @@ namespace SystemOptimizer.Models
         public bool MinimizeToTray { get; set; } = false;
         public bool EnableNotifications { get; set; } = true;
         public int CleanupLevel { get; set; } = 2;
+        public bool CheckUpdatesAtStartup { get; set; } = true;
         
         private static readonly string SettingsFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
