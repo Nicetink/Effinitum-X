@@ -40,7 +40,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to open the link: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Failed to open the link: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

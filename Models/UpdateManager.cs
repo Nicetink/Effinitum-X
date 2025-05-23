@@ -12,7 +12,7 @@ namespace SystemOptimizer.Models
     public class UpdateManager
     {
         private const string GithubRepoApiUrl = "https://api.github.com/repos/Nicetink/Effinitum-X/releases/latest";
-        private const string CurrentVersion = "1.6.0"; // Current version
+        private const string CurrentVersion = "1.9.5"; // Current version - Official Version
         
         // Event for update notification
         public event EventHandler<UpdateEventArgs> UpdateCheckCompleted;
@@ -43,7 +43,7 @@ namespace SystemOptimizer.Models
                         
                         var updateInfo = new UpdateInfo
                         {
-                            CurrentVersion = CurrentVersion,
+                            CurrentVersion = CurrentVersion + " (Official Version)",
                             LatestVersion = latestVersion,
                             IsUpdateAvailable = isNewer,
                             ReleaseNotes = releaseNotes,
@@ -63,7 +63,7 @@ namespace SystemOptimizer.Models
                 
                 var updateInfo = new UpdateInfo
                 {
-                    CurrentVersion = CurrentVersion,
+                    CurrentVersion = CurrentVersion + " (Official Version)",
                     IsUpdateAvailable = false,
                     ErrorMessage = ex.Message
                 };

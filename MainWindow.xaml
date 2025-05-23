@@ -5,14 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SystemOptimizer"
         xmlns:ui="http://schemas.modernwpf.com/2019"
-        ui:WindowHelper.UseModernWindowStyle="True"
+        ui:WindowHelper.UseModernWindowStyle="False"
         mc:Ignorable="d"
         Title="Effinitum X" Height="680" Width="1000"
         Icon="Resources/AppIcon.ico"
         Visibility="Visible"
         WindowStartupLocation="CenterScreen"
         Topmost="True"
-        Loaded="MainWindow_Loaded">
+        Loaded="MainWindow_Loaded"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        BorderThickness="1"
+        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}">
     <Window.Resources>
         <Style x:Key="MenuButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Margin" Value="5"/>
@@ -21,6 +25,53 @@
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <!-- Стиль для кнопок в заголовке -->
+        <Style x:Key="TitlebarButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="{TemplateBinding Background}">
+                            <TextBlock 
+                                Text="{TemplateBinding Content}" 
+                                FontFamily="{TemplateBinding FontFamily}" 
+                                FontSize="{TemplateBinding FontSize}" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center"
+                                Foreground="{TemplateBinding Foreground}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Особый стиль для кнопки закрытия -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitlebarButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E81123"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Конвертеры для UWP Apps -->
@@ -33,24 +84,76 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
+        <!-- Кастомный заголовок окна -->
+        <Grid Grid.Row="0" x:Name="TitleBar" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Иконка и название -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10,5">
+                <Image Source="Resources/AppIcon.ico" Width="20" Height="20" Margin="0,0,8,0"/>
+                <TextBlock Text="Effinitum X" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            </StackPanel>
+            
+            <!-- Дополнительные кнопки в заголовке -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="20,0,0,0">
+                <Button x:Name="btnThemeToggle" Style="{StaticResource TitlebarButtonStyle}" 
+                        Content="&#xE793;" ToolTip="Переключить тему" Click="ThemeToggle_Click"/>
+                <Button x:Name="btnAlwaysOnTop" Style="{StaticResource TitlebarButtonStyle}" 
+                        Content="&#xE840;" ToolTip="Окно поверх всех окон" Click="AlwaysOnTop_Click"/>
+                <Button x:Name="btnNotifications" Style="{StaticResource TitlebarButtonStyle}" 
+                        Content="&#xE715;" ToolTip="Центр уведомлений" Click="Notifications_Click"/>
+            </StackPanel>
+            
+            <!-- Кнопки управления окном -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="btnMinimize" Style="{StaticResource TitlebarButtonStyle}" 
+                        Content="&#xE921;" ToolTip="Свернуть" Click="Minimize_Click"/>
+                <Button x:Name="btnMaximize" Style="{StaticResource TitlebarButtonStyle}" 
+                        Content="&#xE922;" ToolTip="Развернуть/Восстановить" Click="Maximize_Click"/>
+                <Button x:Name="btnClose" Style="{StaticResource CloseButtonStyle}" 
+                        Content="&#xE8BB;" ToolTip="Закрыть" Click="Close_Click"/>
+            </StackPanel>
+        </Grid>
+        
         <!-- Top Menu -->
-        <Menu Grid.Row="0">
+        <Menu Grid.Row="1" x:Name="MainMenu">
             <MenuItem Header="File">
+                <MenuItem Header="Save Layout" Click="MenuSaveLayout_Click"/>
+                <MenuItem Header="Export Settings" Click="MenuExportSettings_Click"/>
+                <MenuItem Header="Import Settings" Click="MenuImportSettings_Click"/>
+                <Separator/>
                 <MenuItem Header="Exit" Click="MenuExit_Click"/>
             </MenuItem>
             <MenuItem Header="Tools">
                 <MenuItem Header="Settings" Click="MenuSettings_Click"/>
                 <MenuItem Header="Check for Updates" Click="MenuCheckUpdates_Click"/>
+                <MenuItem Header="Take Screenshot" Click="MenuTakeScreenshot_Click"/>
+                <MenuItem Header="System Restore Point" Click="MenuCreateRestorePoint_Click"/>
+            </MenuItem>
+            <MenuItem Header="View">
+                <MenuItem Header="Light Theme" Click="MenuLightTheme_Click"/>
+                <MenuItem Header="Dark Theme" Click="MenuDarkTheme_Click"/>
+                <MenuItem Header="System Theme" Click="MenuSystemTheme_Click"/>
+                <Separator/>
+                <MenuItem Header="Compact View" IsCheckable="True" Click="MenuCompactView_Click"/>
+                <MenuItem Header="Always on Top" IsCheckable="True" Click="MenuAlwaysOnTop_Click"/>
             </MenuItem>
             <MenuItem Header="Help">
+                <MenuItem Header="View Documentation" Click="MenuViewDocumentation_Click"/>
+                <MenuItem Header="Report Issue" Click="MenuReportIssue_Click"/>
                 <MenuItem Header="About" Click="MenuAbout_Click"/>
             </MenuItem>
         </Menu>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220"/>
                 <ColumnDefinition Width="*"/>
@@ -128,6 +231,7 @@
                         <ui:FontIcon Glyph="&#xE713;" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Tag="animations" Icon="Play" Content="System Animations"/>
                 </ui:NavigationView.MenuItems>
             </ui:NavigationView>
             
@@ -683,6 +787,207 @@
                             <Button Content="Save Settings" HorizontalAlignment="Left" Margin="0,15,0,0" Click="SaveSettings_Click"/>
                         </ui:SimpleStackPanel>
                     </StackPanel>
+                </Grid>
+
+                <!-- Страница управления анимациями -->
+                <Grid x:Name="animationsPage" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="System Animations" FontSize="24" FontWeight="SemiBold" Margin="30,20,0,20"/>
+                    
+                    <ScrollViewer Grid.Row="1" Margin="20,0,20,20">
+                        <StackPanel>
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                    CornerRadius="8" Padding="20" Margin="0,0,0,20">
+                                <StackPanel>
+                                    <TextBlock Text="Current Animation Status" FontWeight="SemiBold" FontSize="18"/>
+                                    <Grid Margin="0,15,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Status:" FontWeight="Medium" Grid.Row="0" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbAnimationStatus" Text="Checking..." Grid.Row="0" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Current Preset:" FontWeight="Medium" Grid.Row="1" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbAnimationPreset" Text="Checking..." Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <Button x:Name="btnRefreshAnimations" Content="Refresh Status" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
+                                                Margin="0,10,0,0" Click="btnRefreshAnimations_Click"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                    CornerRadius="8" Padding="20" Margin="0,0,0,20">
+                                <StackPanel>
+                                    <TextBlock Text="Animation Presets" FontWeight="SemiBold" FontSize="18" Margin="0,0,0,15"/>
+                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,15">
+                                        Choose an animation preset to configure Windows animations. Each preset offers different levels of visual effects.
+                                    </TextBlock>
+                                    
+                                    <Grid x:Name="presetsContainer" Margin="0,0,0,15">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <Border Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}" CornerRadius="6" Margin="0,0,5,10"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                                                Grid.Row="0" Grid.Column="0">
+                                            <StackPanel Margin="15,10">
+                                                <TextBlock Text="No Animations" FontWeight="Medium"/>
+                                                <TextBlock Text="Disables all animations for best performance" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,10"
+                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Apply" Tag="None" Click="btnApplyPreset_Click" 
+                                                        HorizontalAlignment="Right" Padding="15,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <Border Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}" CornerRadius="6" Margin="5,0,0,10"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                                                Grid.Row="0" Grid.Column="1">
+                                            <StackPanel Margin="15,10">
+                                                <TextBlock Text="Minimal Animations" FontWeight="Medium"/>
+                                                <TextBlock Text="Only basic window animations" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,10"
+                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Apply" Tag="Minimal" Click="btnApplyPreset_Click" 
+                                                        HorizontalAlignment="Right" Padding="15,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <Border Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}" CornerRadius="6" Margin="0,0,5,10"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                                                Grid.Row="1" Grid.Column="0">
+                                            <StackPanel Margin="15,10">
+                                                <TextBlock Text="Basic Animations" FontWeight="Medium"/>
+                                                <TextBlock Text="Window and taskbar animations" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,10"
+                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Apply" Tag="Basic" Click="btnApplyPreset_Click" 
+                                                        HorizontalAlignment="Right" Padding="15,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <Border Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}" CornerRadius="6" Margin="5,0,0,10"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                                                Grid.Row="1" Grid.Column="1">
+                                            <StackPanel Margin="15,10">
+                                                <TextBlock Text="Standard Animations" FontWeight="Medium"/>
+                                                <TextBlock Text="Standard visual effects with window shadows and Aero peek" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,10"
+                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Apply" Tag="Standard" Click="btnApplyPreset_Click" 
+                                                        HorizontalAlignment="Right" Padding="15,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <Border Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}" CornerRadius="6" Margin="0,0,5,10"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                                                Grid.Row="2" Grid.Column="0">
+                                            <StackPanel Margin="15,10">
+                                                <TextBlock Text="Enhanced Animations" FontWeight="Medium"/>
+                                                <TextBlock Text="All animations with transparency and smooth scrolling" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,10"
+                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Apply" Tag="Enhanced" Click="btnApplyPreset_Click" 
+                                                        HorizontalAlignment="Right" Padding="15,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <Border Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}" CornerRadius="6" Margin="5,0,0,10"
+                                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                                                Grid.Row="2" Grid.Column="1">
+                                            <StackPanel Margin="15,10">
+                                                <TextBlock Text="Maximum Animations" FontWeight="Medium"/>
+                                                <TextBlock Text="All animations and visual effects for best appearance" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,10"
+                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Apply" Tag="Maximum" Click="btnApplyPreset_Click" 
+                                                        HorizontalAlignment="Right" Padding="15,3"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                    CornerRadius="8" Padding="20" Margin="0,0,0,20">
+                                <StackPanel>
+                                    <TextBlock Text="Animation Details" FontWeight="SemiBold" FontSize="18" Margin="0,0,0,15"/>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Text="Window Animations:" Grid.Row="0" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbWindowAnimations" Text="Unknown" Grid.Row="0" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Taskbar Animations:" Grid.Row="1" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbTaskbarAnimations" Text="Unknown" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="UI Transitions:" Grid.Row="2" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbTransitions" Text="Unknown" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Window Shadows:" Grid.Row="3" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbShadows" Text="Unknown" Grid.Row="3" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Aero Peek:" Grid.Row="4" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbAero" Text="Unknown" Grid.Row="4" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Window Thumbnails:" Grid.Row="5" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbThumbnails" Text="Unknown" Grid.Row="5" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Transparency Effects:" Grid.Row="6" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbTransparency" Text="Unknown" Grid.Row="6" Grid.Column="1" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Smooth Scrolling:" Grid.Row="7" Grid.Column="0" Margin="0,0,20,10"/>
+                                        <TextBlock x:Name="tbSmoothScroll" Text="Unknown" Grid.Row="7" Grid.Column="1" Margin="0,0,0,10"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                    CornerRadius="8" Padding="20">
+                                <StackPanel>
+                                    <TextBlock Text="Animation Controls" FontWeight="SemiBold" FontSize="18" Margin="0,0,0,15"/>
+                                    
+                                    <ui:SimpleStackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
+                                        <Button x:Name="btnEnableAllAnimations" Content="Enable All Animations" 
+                                                Click="btnEnableAllAnimations_Click" Padding="15,5"/>
+                                        <Button x:Name="btnDisableAllAnimations" Content="Disable All Animations" 
+                                                Click="btnDisableAllAnimations_Click" Padding="15,5"/>
+                                    </ui:SimpleStackPanel>
+                                    
+                                    <TextBlock x:Name="tbAnimationActionResult" Text="" FontStyle="Italic" 
+                                               Foreground="{DynamicResource SystemControlForegroundAccentBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Grid>

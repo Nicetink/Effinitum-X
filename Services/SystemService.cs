@@ -1768,7 +1768,7 @@ namespace SystemOptimizer.Services
                     var now = DateTime.Now;
                     
                     // Используем Dispatcher.Invoke для безопасного доступа к ObservableCollection
-                    Application.Current.Dispatcher.Invoke(() => 
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
                     {
                         info.CpuHistory.Add(new PerformancePoint(now, info.CpuUsage));
                         info.MemoryHistory.Add(new PerformancePoint(now, info.MemoryUsage));
@@ -2393,6 +2393,382 @@ namespace SystemOptimizer.Services
             
             return success;
         }
+
+        #region System Animations Management
+
+        public async Task<bool> EnableSystemAnimations()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("UserPreferencesMask", new byte[] { 0x9E, 0x3E, 0x07, 0x80, 0x12, 0x00, 0x00, 0x00 }, RegistryValueKind.Binary);
+                    }
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("VisualFXSetting", 1, RegistryValueKind.DWord); // 1 - Adjust for best appearance
+                    }
+                }
+
+                // Enable specific animations
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop\WindowMetrics", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("MinAnimate", "1", RegistryValueKind.String);
+                    }
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("TaskbarAnimations", 1, RegistryValueKind.DWord);
+                        key.SetValue("ListviewAlphaSelect", 1, RegistryValueKind.DWord);
+                        key.SetValue("ListviewShadow", 1, RegistryValueKind.DWord);
+                    }
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("EnableAeroPeek", 1, RegistryValueKind.DWord);
+                        key.SetValue("AlwaysHibernateThumbnails", 1, RegistryValueKind.DWord);
+                    }
+                }
+
+                // DWM Composition (Aero)
+                RunProcess("reg", @"add ""HKCU\Software\Microsoft\Windows\DWM"" /v CompositionPolicy /t REG_DWORD /d 1 /f");
+
+                // Apply changes without restarting
+                RunProcess("taskkill", "/f /im explorer.exe");
+                await Task.Delay(1000);
+                RunProcess("explorer", "");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error enabling system animations", ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> DisableSystemAnimations()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("UserPreferencesMask", new byte[] { 0x90, 0x12, 0x01, 0x80, 0x10, 0x00, 0x00, 0x00 }, RegistryValueKind.Binary);
+                        key.SetValue("DragFullWindows", "0", RegistryValueKind.String);
+                    }
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("VisualFXSetting", 2, RegistryValueKind.DWord); // 2 - Adjust for best performance
+                    }
+                }
+
+                // Disable specific animations
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop\WindowMetrics", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("MinAnimate", "0", RegistryValueKind.String);
+                    }
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("TaskbarAnimations", 0, RegistryValueKind.DWord);
+                        key.SetValue("ListviewAlphaSelect", 0, RegistryValueKind.DWord);
+                        key.SetValue("ListviewShadow", 0, RegistryValueKind.DWord);
+                    }
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("EnableAeroPeek", 0, RegistryValueKind.DWord);
+                        key.SetValue("AlwaysHibernateThumbnails", 0, RegistryValueKind.DWord);
+                    }
+                }
+
+                // DWM Composition (Aero) disable
+                RunProcess("reg", @"add ""HKCU\Software\Microsoft\Windows\DWM"" /v CompositionPolicy /t REG_DWORD /d 0 /f");
+
+                // Apply changes without restarting
+                RunProcess("taskkill", "/f /im explorer.exe");
+                await Task.Delay(1000);
+                RunProcess("explorer", "");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error disabling system animations", ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> SetAnimationPreset(AnimationPreset preset)
+        {
+            try
+            {
+                // Default settings to build upon
+                bool enableTaskbarAnimations = false;
+                bool enableWindowAnimations = false;
+                bool enableTransitions = false;
+                bool enableAero = false;
+                bool enableThumbnails = false;
+                bool enableTransparency = false;
+                bool enableSmoothScroll = false;
+                bool enableShadows = false;
+
+                // Configure according to preset
+                switch (preset)
+                {
+                    case AnimationPreset.Minimal:
+                        enableWindowAnimations = true;
+                        break;
+
+                    case AnimationPreset.Basic:
+                        enableWindowAnimations = true;
+                        enableTaskbarAnimations = true;
+                        enableTransitions = true;
+                        break;
+
+                    case AnimationPreset.Standard:
+                        enableWindowAnimations = true;
+                        enableTaskbarAnimations = true;
+                        enableTransitions = true;
+                        enableAero = true;
+                        enableThumbnails = true;
+                        enableShadows = true;
+                        break;
+
+                    case AnimationPreset.Enhanced:
+                        enableWindowAnimations = true;
+                        enableTaskbarAnimations = true;
+                        enableTransitions = true;
+                        enableAero = true;
+                        enableThumbnails = true;
+                        enableTransparency = true;
+                        enableSmoothScroll = true;
+                        enableShadows = true;
+                        break;
+
+                    case AnimationPreset.Maximum:
+                        // Enable all animations
+                        return await EnableSystemAnimations();
+
+                    case AnimationPreset.None:
+                        // Disable all animations
+                        return await DisableSystemAnimations();
+                }
+
+                // Apply selected settings
+                using (var deskKey = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true))
+                if (deskKey != null)
+                {
+                    deskKey.SetValue("DragFullWindows", enableWindowAnimations ? "1" : "0", RegistryValueKind.String);
+                    
+                    // Create a UserPreferencesMask based on current settings
+                    byte[] prefMask = new byte[] { 0x90, 0x12, 0x01, 0x80, 0x10, 0x00, 0x00, 0x00 }; // Default - no animations
+                    
+                    if (enableWindowAnimations || enableTransitions)
+                    {
+                        prefMask[0] = 0x9E;
+                        prefMask[1] = 0x3E;
+                        prefMask[2] = 0x07;
+                    }
+                    
+                    if (enableSmoothScroll)
+                    {
+                        prefMask[4] |= 0x02;
+                    }
+                    
+                    deskKey.SetValue("UserPreferencesMask", prefMask, RegistryValueKind.Binary);
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop\WindowMetrics", true))
+                if (key != null)
+                {
+                    key.SetValue("MinAnimate", enableWindowAnimations ? "1" : "0", RegistryValueKind.String);
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                if (key != null)
+                {
+                    key.SetValue("TaskbarAnimations", enableTaskbarAnimations ? 1 : 0, RegistryValueKind.DWord);
+                    key.SetValue("ListviewShadow", enableShadows ? 1 : 0, RegistryValueKind.DWord);
+                }
+
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM", true))
+                if (key != null)
+                {
+                    key.SetValue("EnableAeroPeek", enableAero ? 1 : 0, RegistryValueKind.DWord);
+                    key.SetValue("AlwaysHibernateThumbnails", enableThumbnails ? 1 : 0, RegistryValueKind.DWord);
+                    
+                    if (enableTransparency)
+                    {
+                        RunProcess("reg", @"add ""HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"" /v EnableTransparency /t REG_DWORD /d 1 /f");
+                    }
+                    else
+                    {
+                        RunProcess("reg", @"add ""HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"" /v EnableTransparency /t REG_DWORD /d 0 /f");
+                    }
+                }
+
+                // Apply visual effects setting
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", true))
+                if (key != null)
+                {
+                    if (preset == AnimationPreset.None)
+                    {
+                        key.SetValue("VisualFXSetting", 2, RegistryValueKind.DWord); // 2 - Adjust for best performance
+                    }
+                    else if (preset == AnimationPreset.Maximum)
+                    {
+                        key.SetValue("VisualFXSetting", 1, RegistryValueKind.DWord); // 1 - Adjust for best appearance
+                    }
+                    else
+                    {
+                        key.SetValue("VisualFXSetting", 3, RegistryValueKind.DWord); // 3 - Custom settings
+                    }
+                }
+
+                // Apply changes without restarting
+                RunProcess("taskkill", "/f /im explorer.exe");
+                await Task.Delay(1000);
+                RunProcess("explorer", "");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error setting animation preset {preset}", ex);
+                return false;
+            }
+        }
+
+        public async Task<AnimationStatus> GetAnimationStatus()
+        {
+            var status = new AnimationStatus { IsEnabled = false, CurrentPreset = AnimationPreset.Unknown };
+            
+            try
+            {
+                // Check if animations are enabled
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop"))
+                if (key != null)
+                {
+                    var dragFullWindows = key.GetValue("DragFullWindows")?.ToString();
+                    if (dragFullWindows == "1")
+                    {
+                        status.IsEnabled = true;
+                    }
+
+                    // Get preference mask to check more detailed animation settings
+                    var prefMask = key.GetValue("UserPreferencesMask") as byte[];
+                    if (prefMask != null && prefMask.Length >= 5)
+                    {
+                        // Check specific bits in the preference mask for different animations
+                        status.WindowAnimationsEnabled = (prefMask[0] & 0x01) != 0;
+                        status.TransitionsEnabled = (prefMask[1] & 0x01) != 0;
+                        status.SmoothScrollEnabled = (prefMask[4] & 0x02) != 0;
+                    }
+                }
+
+                // Check taskbar animations
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"))
+                if (key != null)
+                {
+                    var taskbarAnimations = key.GetValue("TaskbarAnimations");
+                    status.TaskbarAnimationsEnabled = (taskbarAnimations != null && (int)taskbarAnimations == 1);
+                    
+                    var listviewShadow = key.GetValue("ListviewShadow");
+                    status.ShadowsEnabled = (listviewShadow != null && (int)listviewShadow == 1);
+                }
+
+                // Check DWM features
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM"))
+                if (key != null)
+                {
+                    var aeroPeek = key.GetValue("EnableAeroPeek");
+                    status.AeroEnabled = (aeroPeek != null && (int)aeroPeek == 1);
+                    
+                    var thumbnails = key.GetValue("AlwaysHibernateThumbnails");
+                    status.ThumbnailsEnabled = (thumbnails != null && (int)thumbnails == 1);
+                }
+
+                // Check transparency
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                if (key != null)
+                {
+                    var transparency = key.GetValue("EnableTransparency");
+                    status.TransparencyEnabled = (transparency != null && (int)transparency == 1);
+                }
+
+                // Determine current preset based on enabled features
+                if (!status.IsEnabled && !status.WindowAnimationsEnabled && !status.TaskbarAnimationsEnabled)
+                {
+                    status.CurrentPreset = AnimationPreset.None;
+                }
+                else if (status.WindowAnimationsEnabled && !status.TaskbarAnimationsEnabled && !status.TransitionsEnabled && !status.AeroEnabled)
+                {
+                    status.CurrentPreset = AnimationPreset.Minimal;
+                }
+                else if (status.WindowAnimationsEnabled && status.TaskbarAnimationsEnabled && status.TransitionsEnabled && !status.AeroEnabled)
+                {
+                    status.CurrentPreset = AnimationPreset.Basic;
+                }
+                else if (status.WindowAnimationsEnabled && status.TaskbarAnimationsEnabled && status.TransitionsEnabled && 
+                         status.AeroEnabled && status.ThumbnailsEnabled && status.ShadowsEnabled && !status.TransparencyEnabled)
+                {
+                    status.CurrentPreset = AnimationPreset.Standard;
+                }
+                else if (status.WindowAnimationsEnabled && status.TaskbarAnimationsEnabled && status.TransitionsEnabled && 
+                         status.AeroEnabled && status.ThumbnailsEnabled && status.ShadowsEnabled && status.TransparencyEnabled && status.SmoothScrollEnabled)
+                {
+                    status.CurrentPreset = AnimationPreset.Enhanced;
+                }
+                else if (status.WindowAnimationsEnabled && status.TaskbarAnimationsEnabled && status.TransitionsEnabled && 
+                         status.AeroEnabled && status.ThumbnailsEnabled && status.ShadowsEnabled && status.TransparencyEnabled && 
+                         status.SmoothScrollEnabled)
+                {
+                    status.CurrentPreset = AnimationPreset.Maximum;
+                }
+                else
+                {
+                    status.CurrentPreset = AnimationPreset.Custom;
+                }
+
+                return status;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error getting animation status", ex);
+                return status;
+            }
+        }
+
+        #endregion
     }
     
     public class ProcessInfo

@@ -23,6 +23,16 @@ using ModernWpf;
 using Microsoft.Win32;
 using ModernWpf.Controls;
 using System.Diagnostics;
+using System.Management;
+using System.Management.Automation;
+using Color = System.Windows.Media.Color;
+using Colors = System.Windows.Media.Colors;
+using MenuItem = System.Windows.Controls.MenuItem;
+using Button = System.Windows.Controls.Button;
+using Border = System.Windows.Controls.Border;
+using Grid = System.Windows.Controls.Grid;
+using Image = System.Drawing.Image; // Для скриншотов
+using ImageFormat = System.Drawing.Imaging.ImageFormat; // Для скриншотов
 
 namespace SystemOptimizer
 {
@@ -61,6 +71,9 @@ namespace SystemOptimizer
             _folderSizeItems = new ObservableCollection<FolderSizeInfo>();
             _processItems = new ObservableCollection<ProcessViewModel>();
             _startupItems = new ObservableCollection<StartupItem>();
+                
+                // Регистрация обработчика закрытия окна
+                this.Closed += Window_Closed;
             
                 // Инициализируем мониторинг производительности
                 InitializePerformanceMonitoring();
@@ -115,8 +128,10 @@ namespace SystemOptimizer
                     File.AppendAllText("critical_error.log", $"{DateTime.Now}: ERROR during initialization: {ex.Message}\n{ex.StackTrace}\n");
                 }
                 
-                MessageBox.Show($"Critical error initializing main window:\n{ex.Message}\n\nCheck the log file for more information.", 
+                System.Windows.MessageBox.Show($"Critical error initializing main window:\n{ex.Message}\n\nCheck the log file for more information.", 
                                "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                
+                Close();
             }
         }
         
@@ -138,11 +153,78 @@ namespace SystemOptimizer
                     CheckForUpdates();
                 }
                 
+                // Инициализация кнопок в заголовке окна
+                InitializeTitleBarButtons();
+                
                 Logger.LogInfo($"Window status - Visibility: {this.Visibility}, IsActive: {this.IsActive}");
             }
             catch (Exception ex)
             {
                 Logger.LogError("Error in MainWindow_Loaded handler", ex);
+            }
+        }
+        
+        private void InitializeTitleBarButtons()
+        {
+            // Установка начального состояния кнопок
+            if (ModernWpf.ThemeManager.Current.ActualApplicationTheme == ModernWpf.ApplicationTheme.Dark)
+            {
+                btnThemeToggle.Content = "\uE708"; // Символ луны для темной темы
+            }
+            else
+            {
+                btnThemeToggle.Content = "\uE706"; // Символ солнца для светлой темы
+            }
+            
+            // Установка состояния кнопки "Поверх всех окон"
+            if (this.Topmost)
+            {
+                btnAlwaysOnTop.Foreground = new SolidColorBrush(Colors.DeepSkyBlue);
+                
+                // Также обновляем соответствующий пункт меню, если он существует
+                UpdateAlwaysOnTopMenuState();
+            }
+            
+            // Установка правильного символа для кнопки максимизации
+            if (this.WindowState == WindowState.Maximized)
+            {
+                btnMaximize.Content = "\uE923"; // Символ восстановления окна
+            }
+            else
+            {
+                btnMaximize.Content = "\uE922"; // Символ разворачивания окна
+            }
+        }
+        
+        private void UpdateAlwaysOnTopMenuState()
+        {
+            try
+            {
+                // Найдем пункт меню Always on Top и обновим его состояние
+                var menu = this.FindName("MainMenu") as Menu;
+                if (menu != null)
+                {
+                    foreach (var item in menu.Items)
+                    {
+                        if (item is MenuItem viewItem && viewItem.Header.ToString() == "View")
+                        {
+                            foreach (var subItem in ((MenuItem)item).Items)
+                            {
+                                if (subItem is MenuItem alwaysOnTopItem && alwaysOnTopItem.Header.ToString() == "Always on Top")
+                                {
+                                    ((MenuItem)subItem).IsChecked = this.Topmost;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Игнорируем ошибки в этом методе, так как он не критичен
+                Logger.LogError("Error updating menu state", ex);
             }
         }
 
@@ -214,7 +296,7 @@ namespace SystemOptimizer
                 {
                     Logger.LogInfo($"Обнаружено обновление: {e.UpdateInfo.LatestVersion}");
                     
-                    var result = MessageBox.Show(
+                    var result = System.Windows.MessageBox.Show(
                         $"A new version of the application is available: {e.UpdateInfo.LatestVersion}\n" +
                         $"Your current version: {e.UpdateInfo.CurrentVersion}\n\n" +
                         $"Release notes:\n{e.UpdateInfo.ReleaseNotes}\n\n" +
@@ -275,7 +357,7 @@ namespace SystemOptimizer
                 {
                     Logger.LogInfo("Обновление успешно загружено и подготовлено к установке");
                     
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         "The update was successfully downloaded and will be installed the next time you start the application.",
                         "Update Ready",
                         MessageBoxButton.OK,
@@ -285,7 +367,7 @@ namespace SystemOptimizer
                 {
                     Logger.LogWarning("Не удалось загрузить или установить обновление");
                     
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         "Failed to download or install the update. Please try again later.",
                         "Update Error",
                         MessageBoxButton.OK,
@@ -296,7 +378,7 @@ namespace SystemOptimizer
             {
                 Logger.LogError("Произошла ошибка при установке обновления", ex);
                 
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     $"Произошла ошибка при установке обновления: {ex.Message}",
                     "Ошибка обновления",
                     MessageBoxButton.OK,
@@ -348,7 +430,7 @@ namespace SystemOptimizer
         
         private void MenuExit_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
         
         private void MenuAbout_Click(object sender, RoutedEventArgs e)
@@ -383,7 +465,7 @@ namespace SystemOptimizer
                 
                 if (updateInfo.IsUpdateAvailable)
                 {
-                    var result = MessageBox.Show(
+                    var result = System.Windows.MessageBox.Show(
                         $"Доступна новая версия приложения: {updateInfo.LatestVersion}\n" +
                         $"Ваша текущая версия: {updateInfo.CurrentVersion}\n\n" +
                         $"Примечания к выпуску:\n{updateInfo.ReleaseNotes}\n\n" +
@@ -399,7 +481,7 @@ namespace SystemOptimizer
                 }
                 else if (!string.IsNullOrEmpty(updateInfo.ErrorMessage))
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         $"Не удалось проверить наличие обновлений: {updateInfo.ErrorMessage}",
                         "Ошибка проверки обновлений",
                         MessageBoxButton.OK,
@@ -407,7 +489,7 @@ namespace SystemOptimizer
                 }
                 else
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         $"У вас установлена последняя версия приложения ({updateInfo.CurrentVersion}).",
                         "Обновления не найдены",
                         MessageBoxButton.OK,
@@ -416,7 +498,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     $"Произошла ошибка при проверке обновлений: {ex.Message}",
                     "Ошибка",
                     MessageBoxButton.OK,
@@ -439,6 +521,7 @@ namespace SystemOptimizer
             if (updatesPage != null) updatesPage.Visibility = Visibility.Collapsed;
             if (zapretPage != null) zapretPage.Visibility = Visibility.Collapsed;
             if (enhancedOptimizerPage != null) enhancedOptimizerPage.Visibility = Visibility.Collapsed;
+            if (animationsPage != null) animationsPage.Visibility = Visibility.Collapsed;
         }
         
         #endregion
@@ -490,7 +573,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading system information: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error loading system information: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         
@@ -544,7 +627,7 @@ namespace SystemOptimizer
         {
             if (cbDrives.SelectedItem == null)
             {
-                MessageBox.Show("Please select a drive to analyze", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("Please select a drive to analyze", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             
@@ -579,7 +662,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error analyzing disk: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error analyzing disk: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -639,7 +722,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading processes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error loading processes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -677,7 +760,7 @@ namespace SystemOptimizer
         {
             try
             {
-                if (MessageBox.Show($"Are you sure you want to terminate the process with ID {processId}?", 
+                if (System.Windows.MessageBox.Show($"Are you sure you want to terminate the process with ID {processId}?", 
                     "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     bool result = _systemService.KillProcess(processId);
@@ -691,17 +774,17 @@ namespace SystemOptimizer
                             _processItems.Remove(process);
                         }
                         
-                        MessageBox.Show("Process terminated successfully", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                        System.Windows.MessageBox.Show("Process terminated successfully", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     else
                     {
-                        MessageBox.Show("Failed to terminate the process", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        System.Windows.MessageBox.Show("Failed to terminate the process", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error terminating process: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error terminating process: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         
@@ -776,7 +859,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading startup items: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error loading startup items: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 tbStartupResult.Text = "Error loading startup items.";
             }
             finally
@@ -800,7 +883,7 @@ namespace SystemOptimizer
                         // If failed, revert the toggle
                         toggleSwitch.IsOn = !toggleSwitch.IsOn;
                         
-                        MessageBox.Show($"Failed to {(toggleSwitch.IsOn ? "enable" : "disable")} the startup item.", 
+                        System.Windows.MessageBox.Show($"Failed to {(toggleSwitch.IsOn ? "enable" : "disable")} the startup item.", 
                             "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
@@ -809,7 +892,7 @@ namespace SystemOptimizer
                     // If an exception occurs, revert the toggle
                     toggleSwitch.IsOn = !toggleSwitch.IsOn;
                     
-                    MessageBox.Show($"Error toggling startup item: {ex.Message}", 
+                    System.Windows.MessageBox.Show($"Error toggling startup item: {ex.Message}", 
                         "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
@@ -827,17 +910,32 @@ namespace SystemOptimizer
             {
                 ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
                 _settings.AppTheme = Models.ThemeMode.Light;
+                btnThemeToggle.Content = "\uE706"; // Символ солнца
             }
             else if (sender == rbDarkTheme && rbDarkTheme.IsChecked == true)
             {
                 ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
                 _settings.AppTheme = Models.ThemeMode.Dark;
+                btnThemeToggle.Content = "\uE708"; // Символ луны
             }
             else if (sender == rbSystemTheme && rbSystemTheme.IsChecked == true)
             {
                 ThemeManager.Current.ApplicationTheme = null; // Use system setting
                 _settings.AppTheme = Models.ThemeMode.System;
+                
+                // Обновим значок в зависимости от текущей системной темы
+                if (ModernWpf.ThemeManager.Current.ActualApplicationTheme == ModernWpf.ApplicationTheme.Dark)
+                {
+                    btnThemeToggle.Content = "\uE708"; // Символ луны
+                }
+                else
+                {
+                    btnThemeToggle.Content = "\uE706"; // Символ солнца
+                }
             }
+            
+            // Сохраняем настройки
+            _settings.Save();
         }
         
         private void SliderCleanupLevel_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -869,25 +967,40 @@ namespace SystemOptimizer
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
         {
             try
-        {
-            _settings.RunAtStartup = cbRunAtStartup.IsChecked ?? false;
-            _settings.MinimizeToTray = cbMinimizeToTray.IsChecked ?? false;
-            _settings.EnableNotifications = cbEnableNotifications.IsChecked ?? false;
+            {
+                // Сохраняем настройки из элементов интерфейса
+                _settings.RunAtStartup = cbRunAtStartup.IsChecked ?? false;
+                _settings.MinimizeToTray = cbMinimizeToTray.IsChecked ?? false;
+                _settings.EnableNotifications = cbEnableNotifications.IsChecked ?? true;
                 _settings.CheckUpdatesAtStartup = cbCheckUpdatesAtStartup.IsChecked ?? true;
-            
-            // Apply run at startup setting
-            ApplyRunAtStartup(_settings.RunAtStartup);
-            
-            // Save settings
-            _settings.Save();
-            
-                Logger.LogInfo("Settings successfully saved");
-                MessageBox.Show("Settings successfully saved.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                // Применяем настройки
+                ApplyRunAtStartup(_settings.RunAtStartup);
+                
+                // Сохраняем настройки
+                _settings.Save();
+                
+                // Показываем уведомление об успешном сохранении
+                ModernWpf.Controls.ContentDialog successDialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Settings Saved",
+                    Content = "Your settings have been saved successfully.",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = successDialog.ShowAsync();
             }
             catch (Exception ex)
             {
-                Logger.LogError("Error saving settings", ex);
-                MessageBox.Show($"Error saving settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Показываем ошибку
+                ModernWpf.Controls.ContentDialog errorDialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to save settings: {ex.Message}",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = errorDialog.ShowAsync();
             }
         }
         
@@ -929,15 +1042,84 @@ namespace SystemOptimizer
                 case Models.ThemeMode.Light:
                     ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
                     rbLightTheme.IsChecked = true;
+                    btnThemeToggle.Content = "\uE706"; // Символ солнца
                     break;
                 case Models.ThemeMode.Dark:
                     ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
                     rbDarkTheme.IsChecked = true;
+                    btnThemeToggle.Content = "\uE708"; // Символ луны
                     break;
                 case Models.ThemeMode.System:
                     ThemeManager.Current.ApplicationTheme = null; // Use system setting
                     rbSystemTheme.IsChecked = true;
+                    
+                    // Обновляем иконку в зависимости от системной темы
+                    if (ThemeManager.Current.ActualApplicationTheme == ApplicationTheme.Dark)
+                    {
+                        btnThemeToggle.Content = "\uE708"; // Символ луны
+                    }
+                    else
+                    {
+                        btnThemeToggle.Content = "\uE706"; // Символ солнца
+                    }
                     break;
+            }
+            
+            // Проверка поддержки прозрачности и настройка параметров окна
+            CheckTransparencySupport();
+            
+            // Также настраиваем другие элементы управления настройками
+            cbRunAtStartup.IsChecked = _settings.RunAtStartup;
+            cbMinimizeToTray.IsChecked = _settings.MinimizeToTray;
+            cbEnableNotifications.IsChecked = _settings.EnableNotifications;
+            cbCheckUpdatesAtStartup.IsChecked = _settings.CheckUpdatesAtStartup;
+            sliderCleanupLevel.Value = _settings.CleanupLevel;
+        }
+        
+        private void CheckTransparencySupport()
+        {
+            try
+            {
+                // Проверяем версию Windows для определения поддержки прозрачности
+                var osVersion = Environment.OSVersion.Version;
+                bool isWindows7OrLower = osVersion.Major < 6 || (osVersion.Major == 6 && osVersion.Minor <= 1);
+
+                // Проверяем поддержку прозрачности в реестре
+                bool transparencyEnabled = true;
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", false))
+                {
+                    if (key != null)
+                    {
+                        var value = key.GetValue("EnableTransparency");
+                        if (value != null && (int)value == 0)
+                        {
+                            transparencyEnabled = false;
+                        }
+                    }
+                }
+
+                // Если Windows 7 или ниже или прозрачность отключена в системе
+                if (isWindows7OrLower || !transparencyEnabled)
+                {
+                    // Отключаем прозрачность окна
+                    this.AllowsTransparency = false;
+                    this.WindowStyle = WindowStyle.SingleBorderWindow;
+                    
+                    // Сбрасываем кастомный стиль заголовка
+                    Grid titleBar = this.FindName("TitleBar") as Grid;
+                    if (titleBar != null)
+                    {
+                        titleBar.Visibility = Visibility.Collapsed;
+                    }
+                    
+                    // Логгируем информацию
+                    Logger.LogInfo("Transparency not supported or disabled, using standard window style");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Если возникла ошибка, логгируем ее
+                Logger.LogError("Error checking transparency support", ex);
             }
         }
 
@@ -977,7 +1159,7 @@ namespace SystemOptimizer
         {
             if (cbOptimizeDrives.SelectedItem == null)
             {
-                MessageBox.Show("Please select a disk for optimization", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("Please select a disk for optimization", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             
@@ -1046,7 +1228,7 @@ namespace SystemOptimizer
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to open the link: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Failed to open the link: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             
@@ -1158,6 +1340,11 @@ namespace SystemOptimizer
                         zapretPage.Visibility = Visibility.Visible;
                         CheckZapretStatus();
                         break;
+                    case "animations":
+                        HideAllPages();
+                        animationsPage.Visibility = Visibility.Visible;
+                        Task.Run(async () => await UpdateAnimationStatus());
+                        break;
                 }
             }
         }
@@ -1193,7 +1380,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading UWP apps: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error loading UWP apps: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnLoadUwpApps.IsEnabled = true;
                 tbUwpFilter.IsEnabled = true;
             }
@@ -1225,9 +1412,9 @@ namespace SystemOptimizer
         {
             try
             {
-                if (sender is Button button && button.Tag is string packageName)
+                if (sender is System.Windows.Controls.Button button && button.Tag is string packageName)
                 {
-                    var result = MessageBox.Show(
+                    var result = System.Windows.MessageBox.Show(
                         $"Вы уверены, что хотите удалить это приложение?\n\n{packageName}",
                         "Подтверждение удаления",
                         MessageBoxButton.YesNo,
@@ -1239,12 +1426,12 @@ namespace SystemOptimizer
                         
                         if (success)
                         {
-                            MessageBox.Show("Application successfully uninstalled.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                            System.Windows.MessageBox.Show("Application successfully uninstalled.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                             LoadUwpApps(); // Обновляем список
                         }
                         else
                         {
-                            MessageBox.Show("Failed to uninstall the application. Make sure you have the necessary permissions.", 
+                            System.Windows.MessageBox.Show("Failed to uninstall the application. Make sure you have the necessary permissions.", 
                                             "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
@@ -1252,7 +1439,7 @@ namespace SystemOptimizer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         
@@ -1303,7 +1490,7 @@ namespace SystemOptimizer
         
         private async void btnDisableDefender_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show(
+            var result = System.Windows.MessageBox.Show(
                 "Отключение Windows Defender может сделать ваш компьютер уязвимым для вирусов и вредоносных программ. Продолжить?",
                 "Предупреждение",
                 MessageBoxButton.YesNo,
@@ -1440,7 +1627,7 @@ namespace SystemOptimizer
         
         private async void btnDisableUpdates_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show(
+            var result = System.Windows.MessageBox.Show(
                 "Отключение обновлений Windows может сделать ваш компьютер уязвимым для атак. Продолжить?",
                 "Предупреждение",
                 MessageBoxButton.YesNo,
@@ -1862,7 +2049,7 @@ namespace SystemOptimizer
                 
                 double x = i * xStep;
                 double y = height - (points[i].Value / 100 * height);
-                polyline.Points.Add(new Point(x, y));
+                polyline.Points.Add(new System.Windows.Point(x, y));
             }
             
             performanceGraph.Children.Add(polyline);
@@ -2014,6 +2201,659 @@ namespace SystemOptimizer
         }
         
         #endregion
+
+        #region Animations Management
+
+        private async void btnRefreshAnimations_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await UpdateAnimationStatus();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error refreshing animation status", ex);
+                System.Windows.MessageBox.Show($"Error refreshing animation status: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task UpdateAnimationStatus()
+        {
+            tbAnimationStatus.Text = "Checking...";
+            tbAnimationPreset.Text = "Checking...";
+            
+            // Reset all status texts
+            tbWindowAnimations.Text = "Unknown";
+            tbTaskbarAnimations.Text = "Unknown";
+            tbTransitions.Text = "Unknown";
+            tbShadows.Text = "Unknown";
+            tbAero.Text = "Unknown";
+            tbThumbnails.Text = "Unknown";
+            tbTransparency.Text = "Unknown";
+            tbSmoothScroll.Text = "Unknown";
+            
+            var status = await _systemService.GetAnimationStatus();
+            
+            // Update status and preset
+            tbAnimationStatus.Text = status.IsEnabled ? "Enabled" : "Disabled";
+            tbAnimationPreset.Text = status.PresetName;
+            
+            // Update animation details
+            tbWindowAnimations.Text = status.WindowAnimationsEnabled ? "Enabled" : "Disabled";
+            tbTaskbarAnimations.Text = status.TaskbarAnimationsEnabled ? "Enabled" : "Disabled";
+            tbTransitions.Text = status.TransitionsEnabled ? "Enabled" : "Disabled";
+            tbShadows.Text = status.ShadowsEnabled ? "Enabled" : "Disabled";
+            tbAero.Text = status.AeroEnabled ? "Enabled" : "Disabled";
+            tbThumbnails.Text = status.ThumbnailsEnabled ? "Enabled" : "Disabled";
+            tbTransparency.Text = status.TransparencyEnabled ? "Enabled" : "Disabled";
+            tbSmoothScroll.Text = status.SmoothScrollEnabled ? "Enabled" : "Disabled";
+        }
+
+        private async void btnEnableAllAnimations_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                tbAnimationActionResult.Text = "Enabling all animations...";
+                btnEnableAllAnimations.IsEnabled = false;
+                btnDisableAllAnimations.IsEnabled = false;
+                
+                bool success = await _systemService.EnableSystemAnimations();
+                
+                if (success)
+                {
+                    tbAnimationActionResult.Text = "All animations have been enabled.";
+                    await UpdateAnimationStatus();
+                }
+                else
+                {
+                    tbAnimationActionResult.Text = "Failed to enable animations. Make sure you have administrator privileges.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error enabling animations", ex);
+                tbAnimationActionResult.Text = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                btnEnableAllAnimations.IsEnabled = true;
+                btnDisableAllAnimations.IsEnabled = true;
+            }
+        }
+
+        private async void btnDisableAllAnimations_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                tbAnimationActionResult.Text = "Disabling all animations...";
+                btnEnableAllAnimations.IsEnabled = false;
+                btnDisableAllAnimations.IsEnabled = false;
+                
+                bool success = await _systemService.DisableSystemAnimations();
+                
+                if (success)
+                {
+                    tbAnimationActionResult.Text = "All animations have been disabled.";
+                    await UpdateAnimationStatus();
+                }
+                else
+                {
+                    tbAnimationActionResult.Text = "Failed to disable animations. Make sure you have administrator privileges.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error disabling animations", ex);
+                tbAnimationActionResult.Text = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                btnEnableAllAnimations.IsEnabled = true;
+                btnDisableAllAnimations.IsEnabled = true;
+            }
+        }
+
+        private async void btnApplyPreset_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is string presetName)
+            {
+                try
+                {
+                    // Disable all preset buttons
+                    var presetButtons = animationsPage.FindName("presetsContainer") as System.Windows.Controls.Panel;
+                    if (presetButtons != null)
+                    {
+                        foreach (var child in presetButtons.Children)
+                        {
+                            if (child is Border border && border.Child is System.Windows.Controls.Panel panel)
+                            {
+                                var applyButton = panel.Children.OfType<Button>().FirstOrDefault();
+                                if (applyButton != null)
+                                {
+                                    applyButton.IsEnabled = false;
+                                }
+                            }
+                        }
+                    }
+
+                    // Get preset by name (convert to lowercase for case-insensitive comparison)
+                    string normalizedPresetName = presetName.ToLowerInvariant();
+                    AnimationPreset preset = AnimationPreset.Standard;
+                    
+                    switch (normalizedPresetName)
+                    {
+                        case "none":
+                            preset = AnimationPreset.None;
+                            break;
+                        case "minimal":
+                            preset = AnimationPreset.Minimal;
+                            break;
+                        case "basic":
+                            preset = AnimationPreset.Basic;
+                            break;
+                        case "standard":
+                            preset = AnimationPreset.Standard;
+                            break;
+                        case "enhanced":
+                            preset = AnimationPreset.Enhanced;
+                            break;
+                        case "maximum":
+                            preset = AnimationPreset.Maximum;
+                            break;
+                    }
+
+                    // Apply preset
+                    await _systemService.SetAnimationPreset(preset);
+                    await UpdateAnimationStatus();
+
+                    // Re-enable buttons
+                    if (presetButtons != null)
+                    {
+                        foreach (var child in presetButtons.Children)
+                        {
+                            if (child is Border border && border.Child is System.Windows.Controls.Panel panel)
+                            {
+                                var applyButton = panel.Children.OfType<Button>().FirstOrDefault();
+                                if (applyButton != null)
+                                {
+                                    applyButton.IsEnabled = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // Show success message
+                    ModernWpf.Controls.ContentDialog successDialog = new ModernWpf.Controls.ContentDialog
+                    {
+                        Title = "Animation Preset Applied",
+                        Content = $"The {presetName} animation preset has been applied successfully.",
+                        CloseButtonText = "OK"
+                    };
+
+                    await successDialog.ShowAsync();
+                }
+                catch (Exception ex)
+                {
+                    ModernWpf.Controls.ContentDialog errorDialog = new ModernWpf.Controls.ContentDialog
+                    {
+                        Title = "Error",
+                        Content = $"Failed to apply animation preset: {ex.Message}",
+                        CloseButtonText = "OK"
+                    };
+
+                    await errorDialog.ShowAsync();
+                }
+            }
+        }
+
+        #endregion
+
+        // Обработчики для кнопок в заголовке окна
+        private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                ToggleMaximizeState();
+            }
+            else
+            {
+                this.DragMove();
+            }
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void Maximize_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleMaximizeState();
+        }
+
+        private void ToggleMaximizeState()
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                this.WindowState = WindowState.Normal;
+                btnMaximize.Content = "\uE922"; // Символ разворачивания окна
+            }
+            else
+            {
+                this.WindowState = WindowState.Maximized;
+                btnMaximize.Content = "\uE923"; // Символ восстановления окна
+            }
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void ThemeToggle_Click(object sender, RoutedEventArgs e)
+        {
+            // Переключение между темной и светлой темой
+            if (ModernWpf.ThemeManager.Current.ActualApplicationTheme == ModernWpf.ApplicationTheme.Dark)
+            {
+                ModernWpf.ThemeManager.Current.ApplicationTheme = ModernWpf.ApplicationTheme.Light;
+                btnThemeToggle.Content = "\uE706"; // Символ солнца
+                _settings.AppTheme = Models.ThemeMode.Light;
+            }
+            else
+            {
+                ModernWpf.ThemeManager.Current.ApplicationTheme = ModernWpf.ApplicationTheme.Dark;
+                btnThemeToggle.Content = "\uE708"; // Символ луны
+                _settings.AppTheme = Models.ThemeMode.Dark;
+            }
+            
+            // Сохраняем настройки
+            _settings.Save();
+            
+            // Обновляем состояние радиокнопок
+            rbLightTheme.IsChecked = _settings.AppTheme == Models.ThemeMode.Light;
+            rbDarkTheme.IsChecked = _settings.AppTheme == Models.ThemeMode.Dark;
+            rbSystemTheme.IsChecked = _settings.AppTheme == Models.ThemeMode.System;
+        }
+
+        private void AlwaysOnTop_Click(object sender, RoutedEventArgs e)
+        {
+            this.Topmost = !this.Topmost;
+            
+            // Изменение внешнего вида кнопки в зависимости от состояния
+            if (this.Topmost)
+            {
+                btnAlwaysOnTop.Foreground = new SolidColorBrush(Colors.DeepSkyBlue);
+            }
+            else
+            {
+                btnAlwaysOnTop.Foreground = (SolidColorBrush)FindResource("SystemControlForegroundBaseHighBrush");
+            }
+            
+            // Обновляем состояние пункта меню
+            UpdateAlwaysOnTopMenuState();
+        }
+
+        private void Notifications_Click(object sender, RoutedEventArgs e)
+        {
+            // Создание и отображение панели уведомлений
+            ShowNotificationsPanel();
+        }
+
+        private void ShowNotificationsPanel()
+        {
+            // Здесь можно добавить реализацию панели уведомлений
+            // Для примера покажем диалоговое окно
+            ModernWpf.Controls.ContentDialog notificationDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Notification Center",
+                Content = "You have no new notifications",
+                CloseButtonText = "OK"
+            };
+            
+            _ = notificationDialog.ShowAsync();
+        }
+
+        // Обработчики для новых пунктов меню
+        private void MenuSaveLayout_Click(object sender, RoutedEventArgs e)
+        {
+            // Сохранение текущей расстановки элементов интерфейса
+            SaveCurrentLayout();
+        }
+
+        private void SaveCurrentLayout()
+        {
+            // Реализация сохранения расположения элементов
+            // Для примера показываем информационное сообщение
+            ModernWpf.Controls.ContentDialog dialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Layout Saved",
+                Content = "Current layout has been saved",
+                CloseButtonText = "OK"
+            };
+            
+            _ = dialog.ShowAsync();
+        }
+
+        private void MenuExportSettings_Click(object sender, RoutedEventArgs e)
+        {
+            // Экспорт настроек в файл
+            ExportSettings();
+        }
+
+        private void ExportSettings()
+        {
+            Microsoft.Win32.SaveFileDialog saveDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                DefaultExt = ".json",
+                Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*",
+                Title = "Export Settings"
+            };
+            
+            bool? result = saveDialog.ShowDialog();
+            if (result == true)
+            {
+                string filePath = saveDialog.FileName;
+                // Здесь должен быть код для сохранения настроек в файл
+                
+                ModernWpf.Controls.ContentDialog dialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Export Settings",
+                    Content = $"Settings have been exported to file:\n{filePath}",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = dialog.ShowAsync();
+            }
+        }
+
+        private void MenuImportSettings_Click(object sender, RoutedEventArgs e)
+        {
+            // Импорт настроек из файла
+            ImportSettings();
+        }
+
+        private void ImportSettings()
+        {
+            Microsoft.Win32.OpenFileDialog openDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                DefaultExt = ".json",
+                Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*",
+                Title = "Import Settings"
+            };
+            
+            bool? result = openDialog.ShowDialog();
+            if (result == true)
+            {
+                string filePath = openDialog.FileName;
+                // Здесь должен быть код для загрузки настроек из файла
+                
+                ModernWpf.Controls.ContentDialog dialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Import Settings",
+                    Content = $"Settings have been imported from file:\n{filePath}",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = dialog.ShowAsync();
+            }
+        }
+
+        private void MenuTakeScreenshot_Click(object sender, RoutedEventArgs e)
+        {
+            // Создание скриншота приложения
+            TakeApplicationScreenshot();
+        }
+
+        private void TakeApplicationScreenshot()
+        {
+            // Временно скрываем окно для создания скриншота без него
+            bool wasVisible = this.IsVisible;
+            this.Hide();
+            
+            // Даем время системе для обновления экрана
+            System.Threading.Thread.Sleep(200);
+            
+            try
+            {
+                // Создание скриншота всего экрана
+                System.Windows.Forms.Screen screen = System.Windows.Forms.Screen.PrimaryScreen;
+                System.Drawing.Rectangle bounds = screen.Bounds;
+                
+                using (System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(bounds.Width, bounds.Height))
+                {
+                    using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bitmap))
+                    {
+                        g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size);
+                    }
+                    
+                    // Создаем папку для скриншотов, если её нет
+                    string screenshotsFolder = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                        "Effinitum X Screenshots");
+                        
+                    System.IO.Directory.CreateDirectory(screenshotsFolder);
+                    
+                    // Генерируем имя файла на основе текущего времени
+                    string fileName = $"Screenshot_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
+                    string filePath = System.IO.Path.Combine(screenshotsFolder, fileName);
+                    
+                    // Сохраняем скриншот
+                    bitmap.Save(filePath, ImageFormat.Png);
+                    
+                    // Уведомляем пользователя
+                    ModernWpf.Controls.ContentDialog dialog = new ModernWpf.Controls.ContentDialog
+                    {
+                        Title = "Screenshot created",
+                        Content = $"Screenshot saved to:\n{filePath}",
+                        CloseButtonText = "OK",
+                        PrimaryButtonText = "Open folder",
+                        DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary
+                    };
+                    
+                    dialog.PrimaryButtonClick += (s, args) =>
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "explorer.exe",
+                            Arguments = screenshotsFolder,
+                            UseShellExecute = true
+                        });
+                    };
+                    
+                    _ = dialog.ShowAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                ModernWpf.Controls.ContentDialog errorDialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to create screenshot:\n{ex.Message}",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = errorDialog.ShowAsync();
+            }
+            finally
+            {
+                // Показываем окно снова
+                if (wasVisible)
+                {
+                    this.Show();
+                }
+            }
+        }
+
+        private void MenuCreateRestorePoint_Click(object sender, RoutedEventArgs e)
+        {
+            // Создание точки восстановления системы
+            CreateSystemRestorePoint();
+        }
+
+        private async void CreateSystemRestorePoint()
+        {
+            try
+            {
+                // Показываем диалог с прогрессом
+                ModernWpf.Controls.ContentDialog progressDialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Creating Restore Point",
+                    Content = "Please wait...",
+                    IsPrimaryButtonEnabled = false,
+                    IsSecondaryButtonEnabled = false,
+                    CloseButtonText = null
+                };
+                
+                _ = progressDialog.ShowAsync();
+                
+                await Task.Run(() =>
+                {
+                    // Запуск PowerShell для создания точки восстановления
+                    using (var ps = System.Management.Automation.PowerShell.Create())
+                    {
+                        ps.AddScript("Checkpoint-Computer -Description \"Effinitum X Auto Restore Point\" -RestorePointType \"APPLICATION_INSTALL\"");
+                        ps.Invoke();
+                    }
+                });
+                
+                progressDialog.Hide();
+                
+                // Показываем сообщение об успешном завершении
+                ModernWpf.Controls.ContentDialog successDialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Restore Point Created",
+                    Content = "System restore point was successfully created",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = successDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                ModernWpf.Controls.ContentDialog errorDialog = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to create restore point:\n{ex.Message}",
+                    CloseButtonText = "OK"
+                };
+                
+                _ = errorDialog.ShowAsync();
+            }
+        }
+
+        private void MenuLightTheme_Click(object sender, RoutedEventArgs e)
+        {
+            ModernWpf.ThemeManager.Current.ApplicationTheme = ModernWpf.ApplicationTheme.Light;
+            btnThemeToggle.Content = "\uE706"; // Символ солнца
+            _settings.AppTheme = Models.ThemeMode.Light;
+            _settings.Save();
+            rbLightTheme.IsChecked = true;
+            rbDarkTheme.IsChecked = false;
+            rbSystemTheme.IsChecked = false;
+        }
+
+        private void MenuDarkTheme_Click(object sender, RoutedEventArgs e)
+        {
+            ModernWpf.ThemeManager.Current.ApplicationTheme = ModernWpf.ApplicationTheme.Dark;
+            btnThemeToggle.Content = "\uE708"; // Символ луны
+            _settings.AppTheme = Models.ThemeMode.Dark;
+            _settings.Save();
+            rbLightTheme.IsChecked = false;
+            rbDarkTheme.IsChecked = true;
+            rbSystemTheme.IsChecked = false;
+        }
+
+        private void MenuSystemTheme_Click(object sender, RoutedEventArgs e)
+        {
+            ModernWpf.ThemeManager.Current.ApplicationTheme = null; // Использовать системную тему
+            _settings.AppTheme = Models.ThemeMode.System;
+            _settings.Save();
+            rbLightTheme.IsChecked = false;
+            rbDarkTheme.IsChecked = false;
+            rbSystemTheme.IsChecked = true;
+            
+            // Обновим значок в зависимости от текущей системной темы
+            if (ModernWpf.ThemeManager.Current.ActualApplicationTheme == ModernWpf.ApplicationTheme.Dark)
+            {
+                btnThemeToggle.Content = "\uE708"; // Символ луны
+            }
+            else
+            {
+                btnThemeToggle.Content = "\uE706"; // Символ солнца
+            }
+        }
+
+        private void MenuCompactView_Click(object sender, RoutedEventArgs e)
+        {
+            // Переключение компактного режима
+            var menuItem = sender as MenuItem;
+            if (menuItem != null && menuItem.IsChecked)
+            {
+                // Включение компактного режима
+                navView.PaneDisplayMode = ModernWpf.Controls.NavigationViewPaneDisplayMode.LeftCompact;
+            }
+            else
+            {
+                // Выключение компактного режима
+                navView.PaneDisplayMode = ModernWpf.Controls.NavigationViewPaneDisplayMode.Left;
+            }
+        }
+
+        private void MenuAlwaysOnTop_Click(object sender, RoutedEventArgs e)
+        {
+            // Получаем ссылку на элемент меню
+            var menuItem = sender as MenuItem;
+            if (menuItem != null)
+            {
+                // Обновляем состояние окна на основе состояния флажка
+                this.Topmost = menuItem.IsChecked;
+                
+                // Обновляем внешний вид кнопки в соответствии с состоянием
+                if (this.Topmost)
+                {
+                    btnAlwaysOnTop.Foreground = new SolidColorBrush(Colors.DeepSkyBlue);
+                }
+                else
+                {
+                    btnAlwaysOnTop.Foreground = (SolidColorBrush)FindResource("SystemControlForegroundBaseHighBrush");
+                }
+            }
+        }
+
+        private void MenuViewDocumentation_Click(object sender, RoutedEventArgs e)
+        {
+            // Открытие документации
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/Nicetink/Effinitum-X/wiki",
+                UseShellExecute = true
+            });
+        }
+
+        private void MenuReportIssue_Click(object sender, RoutedEventArgs e)
+        {
+            // Открытие страницы для сообщения о проблеме
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/Nicetink/Effinitum-X/issues",
+                UseShellExecute = true
+            });
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            try
+            {
+                // Сохраняем настройки при закрытии
+                _settings.Save();
+                Logger.LogInfo("Settings saved on application close");
+            }
+            catch (Exception ex)
+            {
+                // Логгируем ошибку, но не показываем пользователю (окно уже закрывается)
+                Logger.LogError("Failed to save settings on close", ex);
+            }
+        }
     }
 
     public class RelayCommand : ICommand

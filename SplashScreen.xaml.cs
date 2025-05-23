@@ -43,7 +43,7 @@ namespace SystemOptimizer
             {
                 Logger.LogError("Error creating splash screen", ex);
                 
-                MessageBox.Show($"Error creating loading window: {ex.Message}", 
+                System.Windows.MessageBox.Show($"Error creating loading window: {ex.Message}", 
                                "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 
                 // Close window in case of error
@@ -73,10 +73,10 @@ namespace SystemOptimizer
                                 Close();
                                 
                                 // Set main window as application's main window
-                                Application.Current.MainWindow = mainWindow;
+                                System.Windows.Application.Current.MainWindow = mainWindow;
                                 
                                 // Change application shutdown mode
-                                Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                                System.Windows.Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
                                 
                                 // Log successful main window creation
                                 Logger.LogInfo("Main window created and displayed");
@@ -91,11 +91,11 @@ namespace SystemOptimizer
                             timer.Stop();
                             Logger.LogError("Error creating main window", ex);
                             
-                            MessageBox.Show($"Error creating main window: {ex.Message}", 
+                            System.Windows.MessageBox.Show($"Error creating main window: {ex.Message}", 
                                           "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             
                             // Close application on error
-                            Application.Current.Shutdown();
+                            System.Windows.Application.Current.Shutdown();
                         }
                     });
                 }
@@ -117,11 +117,11 @@ namespace SystemOptimizer
                 timer.Stop();
                 Close();
                 
-                MessageBox.Show($"Loading error: {ex.Message}", 
+                System.Windows.MessageBox.Show($"Loading error: {ex.Message}", 
                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 
                 // Close application on error
-                Application.Current.Shutdown();
+                System.Windows.Application.Current.Shutdown();
             }
         }
     }

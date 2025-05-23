@@ -24,10 +24,10 @@
                 <ui:SimpleStackPanel>
                     <TextBlock Text="Effinitum X" FontSize="18" FontWeight="Bold"/>
                     <TextBlock Text="A powerful system optimization tool for Windows" Margin="0,5,0,0"/>
-                    <TextBlock Text="Version 1.6.0" Margin="0,5,0,0" />
+                    <TextBlock Text="Version 1.9.5 (Official Version)" Margin="0,5,0,0" />
                     <TextBlock Margin="0,10,0,0">
                         <Run>Created by</Run>
-                        <Hyperlink NavigateUri="https://github.com/Nicetook" RequestNavigate="Hyperlink_RequestNavigate">Nicet ink</Hyperlink>
+                        <Hyperlink NavigateUri="https://github.com/Nicetink" RequestNavigate="Hyperlink_RequestNavigate">Nicet ink</Hyperlink>
                     </TextBlock>
                 </ui:SimpleStackPanel>
             </StackPanel>
@@ -57,6 +57,7 @@
                                     • UWP apps management and uninstallation<LineBreak/>
                                     • Windows Defender control<LineBreak/>
                                     • Windows Update management<LineBreak/>
+                                    • System animations control and customization<LineBreak/>
                                     • Zapret-Discord-YouTube integration for accessing blocked services
                                 </TextBlock>
                             </StackPanel>
@@ -106,6 +107,25 @@
                 <ScrollViewer>
                     <StackPanel Margin="10">
                         <TextBlock Text="Version History" FontWeight="Bold" FontSize="16" Margin="0,0,0,15"/>
+                        
+                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                Padding="15" CornerRadius="4" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Version 1.9.5 (Official Version)" FontWeight="SemiBold"/>
+                                <TextBlock Text="June 10, 2025" FontStyle="Italic" Margin="0,5,0,5" 
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock TextWrapping="Wrap">
+                                    • Added system animations control and customization<LineBreak/>
+                                    • Added multiple animation presets from minimal to maximum<LineBreak/>
+                                    • Added ability to restore all system animations<LineBreak/>
+                                    • Improved user interface with custom window buttons<LineBreak/>
+                                    • Complete English translation of the application<LineBreak/>
+                                    • Added "Official Version" designation<LineBreak/>
+                                    • Fixed various UI bugs and performance issues<LineBreak/>
+                                    • Enhanced startup and shutdown performance
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
                         
                         <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
                                 Padding="15" CornerRadius="4" Margin="0,0,0,10">

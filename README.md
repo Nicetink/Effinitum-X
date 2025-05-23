@@ -16,6 +16,8 @@ Effinitum X is a powerful Windows system optimization and cleanup application.
 - **Windows Defender Control**: Enable or disable Windows Defender with a single click
 - **Windows Update Manager**: Control Windows Update service to stop automatic updates
 - **Zapret-Discord-YouTube Integration**: Helps to bypass Discord and YouTube blocks in certain regions
+- **Gaming Mode**: Optimize system performance for gaming
+- **Multi-language Support**: Available in 5 languages
 
 ## Screenshots
 
@@ -45,8 +47,19 @@ cd EffinitumX
 dotnet build --configuration Release
 ```
 
-## Latest Changes (v1.6.0)
+## Latest Changes (v1.9.5)
 
+• Added system animations control and customization
+• Added multiple animation presets from minimal to maximum
+• Added ability to restore all system animations
+• Improved user interface with custom window buttons
+• Complete English translation of the application
+• Added "Official Version" designation
+• Fixed various UI bugs and performance issues
+• Enhanced startup and shutdown performance
+## Previous Updates
+
+### v1.6.0
 - Added automatic updates from GitHub repository
 - Improved logging system with new Logger class
 - Fixed "Value cannot be null (Parameter 'value')" error on startup
@@ -54,8 +67,7 @@ dotnet build --configuration Release
 - Optimized application initialization process
 - General performance and stability improvements
 
-## Previous Updates (v1.2.2)
-
+### v1.2.2
 - Added UWP apps management and uninstallation
 - Added Windows Defender control
 - Added Windows Update management

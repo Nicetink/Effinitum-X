@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Effinitum X"
-#define MyAppVersion "1.6.0"
+#define MyAppVersion "1.2.2"
 #define MyAppPublisher "Nicet ink"
 #define MyAppURL "https://nicetink.github.io/nicetoffc.com/"
 #define MyAppExeName "SystemOptimizer.exe"
