@@ -16,7 +16,8 @@
         WindowStyle="None"
         AllowsTransparency="True"
         BorderThickness="1"
-        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+        Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}">
     <Window.Resources>
         <Style x:Key="MenuButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Margin" Value="5"/>
@@ -81,7 +82,7 @@
         <local:BoolToInverseConverter x:Key="BoolToInverseConverter"/>
     </Window.Resources>
     
-    <Grid>
+    <Grid Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -236,7 +237,7 @@
             </ui:NavigationView>
             
             <!-- Main Content -->
-            <Grid Grid.Column="1" Margin="20">
+            <Grid Grid.Column="1" Margin="20" Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}">
                 <!-- Welcome Page -->
                 <Grid x:Name="welcomePage">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">

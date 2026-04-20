@@ -9,6 +9,11 @@
                 <ui:ThemeResources />
                 <ui:XamlControlsResources />
             </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Стиль для TextBlock чтобы текст был виден в темной теме -->
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

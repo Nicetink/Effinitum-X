@@ -9,8 +9,9 @@
         mc:Ignorable="d"
         Title="About Effinitum X" Height="480" Width="600"
         Icon="Resources/AppIcon.ico"
-        WindowStartupLocation="CenterOwner">
-    <Grid Margin="20">
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}">
+    <Grid Margin="20" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

@@ -936,6 +936,9 @@ namespace SystemOptimizer
             
             // Сохраняем настройки
             _settings.Save();
+            
+            // Принудительно обновляем UI
+            ForceUpdateTheme();
         }
         
         private void SliderCleanupLevel_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -1074,6 +1077,12 @@ namespace SystemOptimizer
             cbEnableNotifications.IsChecked = _settings.EnableNotifications;
             cbCheckUpdatesAtStartup.IsChecked = _settings.CheckUpdatesAtStartup;
             sliderCleanupLevel.Value = _settings.CleanupLevel;
+            
+            // Принудительно обновляем UI после применения темы
+            Dispatcher.BeginInvoke(new Action(() => 
+            {
+                ForceUpdateTheme();
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
         
         private void CheckTransparencySupport()
@@ -2473,6 +2482,9 @@ namespace SystemOptimizer
             rbLightTheme.IsChecked = _settings.AppTheme == Models.ThemeMode.Light;
             rbDarkTheme.IsChecked = _settings.AppTheme == Models.ThemeMode.Dark;
             rbSystemTheme.IsChecked = _settings.AppTheme == Models.ThemeMode.System;
+            
+            // Принудительно обновляем UI
+            ForceUpdateTheme();
         }
 
         private void AlwaysOnTop_Click(object sender, RoutedEventArgs e)
@@ -2750,6 +2762,7 @@ namespace SystemOptimizer
             rbLightTheme.IsChecked = true;
             rbDarkTheme.IsChecked = false;
             rbSystemTheme.IsChecked = false;
+            ForceUpdateTheme();
         }
 
         private void MenuDarkTheme_Click(object sender, RoutedEventArgs e)
@@ -2761,6 +2774,7 @@ namespace SystemOptimizer
             rbLightTheme.IsChecked = false;
             rbDarkTheme.IsChecked = true;
             rbSystemTheme.IsChecked = false;
+            ForceUpdateTheme();
         }
 
         private void MenuSystemTheme_Click(object sender, RoutedEventArgs e)
@@ -2780,6 +2794,39 @@ namespace SystemOptimizer
             else
             {
                 btnThemeToggle.Content = "\uE706"; // Символ солнца
+            }
+            
+            ForceUpdateTheme();
+        }
+        
+        private void ForceUpdateTheme()
+        {
+            // Принудительно обновляем все элементы UI
+            this.UpdateLayout();
+            this.InvalidateVisual();
+            
+            // Рекурсивно обновляем все дочерние элементы
+            UpdateChildrenTheme(this);
+        }
+        
+        private void UpdateChildrenTheme(DependencyObject parent)
+        {
+            if (parent == null) return;
+            
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                
+                // Обновляем элемент
+                if (child is FrameworkElement element)
+                {
+                    element.UpdateLayout();
+                    element.InvalidateVisual();
+                }
+                
+                // Рекурсивно обновляем дочерние элементы
+                UpdateChildrenTheme(child);
             }
         }
 

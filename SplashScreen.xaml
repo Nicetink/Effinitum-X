@@ -10,7 +10,8 @@
         Title="Effinitum X" Height="400" Width="600"
         WindowStyle="None" ResizeMode="NoResize" 
         WindowStartupLocation="CenterScreen" 
-        Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        Background="Transparent"
+        AllowsTransparency="True">
     
     <Border CornerRadius="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" 
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1">
